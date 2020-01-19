@@ -43,6 +43,8 @@ import de.danoeh.antennapod.fragment.PlaybackHistoryFragment;
 import de.danoeh.antennapod.fragment.QueueFragment;
 import de.danoeh.antennapod.fragment.SubscriptionFragment;
 import de.danoeh.antennapod.fragment.TransitionEffect;
+import de.danoeh.antennapod.making_history.MHDefaultFeedLoader;
+import de.danoeh.antennapod.menuhandler.NavDrawerActivity;
 import de.danoeh.antennapod.preferences.PreferenceUpgrader;
 import de.danoeh.antennapod.view.LockableBottomSheetBehavior;
 import org.apache.commons.lang3.ArrayUtils;
@@ -125,6 +127,9 @@ public class MainActivity extends CastEnabledActivity {
         AudioPlayerFragment audioPlayerFragment = new AudioPlayerFragment();
         transaction.replace(R.id.audioplayerFragment, audioPlayerFragment, AudioPlayerFragment.TAG);
         transaction.commit();
+
+        // GUYK: Load our default feeds from the OPML.
+        MHDefaultFeedLoader.loadDefaultOPMLIfNeeded(this);
 
         checkFirstLaunch();
         PreferenceUpgrader.checkUpgrades(this);
