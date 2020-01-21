@@ -26,6 +26,7 @@ import java.util.concurrent.Callable;
 
 import de.danoeh.antennapod.R;
 import de.danoeh.antennapod.activity.MainActivity;
+import de.danoeh.antennapod.activity.MediaplayerInfoActivity;
 import de.danoeh.antennapod.adapter.SubscriptionsAdapter;
 import de.danoeh.antennapod.core.asynctask.FeedRemover;
 import de.danoeh.antennapod.core.dialog.ConfirmationDialog;
@@ -43,6 +44,7 @@ import de.danoeh.antennapod.core.util.FeedItemUtil;
 import de.danoeh.antennapod.core.util.IntentUtils;
 import de.danoeh.antennapod.core.util.download.AutoUpdateManager;
 import de.danoeh.antennapod.dialog.RenameFeedDialog;
+import de.danoeh.antennapod.making_history.MHDefaultFeedLoader;
 import de.danoeh.antennapod.menuhandler.MenuItemUtils;
 import de.danoeh.antennapod.view.EmptyViewHandler;
 import io.reactivex.Observable;
@@ -285,6 +287,7 @@ public class SubscriptionFragment extends Fragment {
 
                     }
                 }
+                MHDefaultFeedLoader.addUnwantedFeedToList(SubscriptionFragment.this.getContext(), feed.getIdentifyingValue());
                 remover.executeAsync();
             }
         };

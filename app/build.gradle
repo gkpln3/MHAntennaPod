@@ -142,6 +142,7 @@ dependencies {
     implementation "androidx.gridlayout:gridlayout:1.0.0"
     implementation "androidx.recyclerview:recyclerview:1.0.0"
     implementation "androidx.coordinatorlayout:coordinatorlayout:1.1.0"
+    implementation 'com.google.android.gms:play-services-auth:17.0.0'
     implementation "androidx.media:media:1.1.0"
     implementation "android.arch.work:work-runtime:$workManagerVersion"
     implementation "com.google.android.material:material:1.0.0"
