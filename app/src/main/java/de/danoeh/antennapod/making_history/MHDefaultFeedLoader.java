@@ -15,10 +15,16 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import android.net.Uri;
+import android.widget.Toast;
 
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.IntStream;
 
 import de.danoeh.antennapod.R;
@@ -41,9 +47,10 @@ import static android.os.AsyncTask.THREAD_POOL_EXECUTOR;
 
 public class MHDefaultFeedLoader {
     private final static String TAG = "MHDefaultFeedLoader";
-    private final static String OPML_FEED_URL = "http://192.168.1.118:8000/default_opml.xml";
+    private final static String OPML_FEED_URL = "http://192.168.1.105:8000/default_opml.xml";
     private final static String SHARED_PREFERENCES_NAME = "MH_SHARED_PREFERENCES";
     private final static String OPML_HASH_PREF_NAME = "OPML_HASH";
+    private final static String UNWANTED_FEEDS_LIST_PREF_NAME = "UNWANTED_FEEDS_LIST";
 
     public static void loadDefaultOPMLIfNeeded(final Activity activity)
     {
@@ -80,6 +87,9 @@ public class MHDefaultFeedLoader {
                     // List changed, Save the new hash and reload the opml file.
                     prefs.edit().putInt(OPML_HASH_PREF_NAME, stringHash).apply();
 
+                    // Fetch the list of the unwanted podcasts.
+                    Set<String> unwantedPodcasts = prefs.getStringSet(UNWANTED_FEEDS_LIST_PREF_NAME, Collections.emptySet());
+
                     final InputStream opmlStream = new ByteArrayInputStream(opmlData.getBytes("UTF-8"));
                     activity.runOnUiThread(() ->
                     {
@@ -92,12 +102,13 @@ public class MHDefaultFeedLoader {
                                 if (result != null) {
                                     Log.d(TAG, "Parsing was successful");
                                     OpmlImportHolder.setReadElements(result);
-                                    int[] all_selected = new int[result.size()];
-                                    for (int i = 0; i < all_selected.length; i++) {
-                                        all_selected[i] = i;
+                                    List<Integer> selectedPodcasts = new ArrayList<Integer>();
+                                    for (int i = 0; i < result.size(); i++) {
+                                        if (!unwantedPodcasts.contains(result.get(i).getXmlUrl()))
+                                            selectedPodcasts.add(i);
                                     }
 
-                                    OpmlFeedQueuer queuer = new OpmlFeedQueuer(activity, all_selected);
+                                    OpmlFeedQueuer queuer = new OpmlFeedQueuer(activity, toIntArray(selectedPodcasts));
                                     queuer.executeAsync();
                                 } else {
                                     Log.d(TAG, "Parser error occurred");
@@ -113,5 +124,26 @@ public class MHDefaultFeedLoader {
                 }
             }
         });
+    }
+
+    /***
+     * Adds a podcast to the list of unwanted podcasts, this happends when the user decides to remove
+     * a podcast from the list, and will make the automatic podcast downloader ignore this podcast
+     * in later loadings.
+     */
+    public static void addUnwantedFeedToList(Context context, String feedURL)
+    {
+        SharedPreferences prefs = context.getSharedPreferences(SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE);
+        Set<String> unwantedPodcasts = prefs.getStringSet(UNWANTED_FEEDS_LIST_PREF_NAME, new HashSet<String>());
+        unwantedPodcasts.add(feedURL);
+        prefs.edit().putStringSet(UNWANTED_FEEDS_LIST_PREF_NAME, unwantedPodcasts).commit();
+    }
+
+    private static int[] toIntArray(List<Integer> list)  {
+        int[] ret = new int[list.size()];
+        int i = 0;
+        for (Integer e : list)
+            ret[i++] = e;
+        return ret;
     }
 }
