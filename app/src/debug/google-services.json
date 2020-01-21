@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "229054985306",
+    "firebase_url": "https://makinghistory-1579519443087.firebaseio.com",
+    "project_id": "makinghistory-1579519443087",
+    "storage_bucket": "makinghistory-1579519443087.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:229054985306:android:2246417d5ca40f44241463",
+        "android_client_info": {
+          "package_name": "de.danoeh.antennapod_mh.debug"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "229054985306-uh6mflfjf0dbkfq2gdh2tavesln3ioa4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAV5rYml_q_33V4vUjWHYiECuEJMeJtc04"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "229054985306-uh6mflfjf0dbkfq2gdh2tavesln3ioa4.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

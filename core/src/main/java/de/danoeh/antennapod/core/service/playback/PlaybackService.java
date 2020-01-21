@@ -40,10 +40,13 @@ import android.widget.Toast;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.bumptech.glide.request.target.Target;
+import com.google.firebase.analytics.FirebaseAnalytics;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
 import de.danoeh.antennapod.core.ClientConfig;
@@ -59,6 +62,7 @@ import de.danoeh.antennapod.core.feed.FeedItem;
 import de.danoeh.antennapod.core.feed.FeedMedia;
 import de.danoeh.antennapod.core.feed.MediaType;
 import de.danoeh.antennapod.core.glide.ApGlideSettings;
+import de.danoeh.antennapod.core.making_history.MHAnalytics;
 import de.danoeh.antennapod.core.preferences.PlaybackPreferences;
 import de.danoeh.antennapod.core.preferences.SleepTimerPreferences;
 import de.danoeh.antennapod.core.preferences.UserPreferences;
@@ -210,6 +214,8 @@ public class PlaybackService extends MediaBrowserServiceCompat {
     private PlaybackServiceStateManager stateManager;
     private Disposable positionEventTimer;
     private PlaybackServiceNotificationBuilder notificationBuilder;
+    private MHAnalytics mMakingHistoryAnalytics;
+    private int lastUpdateTime = 0;
 
     /**
      * Used for Lollipop notifications, Android Wear, and Android Auto.
@@ -319,6 +325,27 @@ public class PlaybackService extends MediaBrowserServiceCompat {
         mediaSession.setActive(true);
 
         EventBus.getDefault().post(new ServiceEvent(ServiceEvent.Action.SERVICE_STARTED));
+
+        mMakingHistoryAnalytics = new MHAnalytics(this);
+
+        // Start a new timer to send analytics events.
+        new Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                try {
+                    // Post the event every 5 minutes.
+                    if (getPlayable() != null && (((getCurrentPosition() - lastUpdateTime) / 1000) > 5*60))
+                    {
+                        lastUpdateTime = getCurrentPosition();
+                        mMakingHistoryAnalytics.reportQueueInEpisode(getPlayable(), lastUpdateTime / 1000);
+                    }
+                }
+                catch (Exception ignored)
+                {
+                    ignored.printStackTrace();
+                }
+            }
+        },0,10000);
     }
 
     @Override
@@ -497,6 +524,9 @@ public class PlaybackService extends MediaBrowserServiceCompat {
                     return Service.START_NOT_STICKY;
                 }
                 mediaPlayer.playMediaObject(playable, stream, startWhenPrepared, prepareImmediately);
+
+                // Log the start of episode.
+                mMakingHistoryAnalytics.reportStartOfPlayback(playable);
             } else {
                 Log.d(TAG, "Did not handle intent to PlaybackService: " + intent);
                 Log.d(TAG, "Extras: " + intent.getExtras());
@@ -604,7 +634,7 @@ public class PlaybackService extends MediaBrowserServiceCompat {
                 }
                 return true;
             case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
-                mediaPlayer.seekDelta(UserPreferences.getFastForwardSecs() * 1000);
+                seekDelta(UserPreferences.getFastForwardSecs() * 1000);
                 return true;
             case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
                 if (UserPreferences.shouldHardwarePreviousButtonRestart()) {
@@ -612,11 +642,11 @@ public class PlaybackService extends MediaBrowserServiceCompat {
                     mediaPlayer.seekTo(0);
                 } else {
                     //  user wants to rewind current episode
-                    mediaPlayer.seekDelta(-UserPreferences.getRewindSecs() * 1000);
+                    seekDelta(-UserPreferences.getRewindSecs() * 1000);
                 }
                 return true;
             case KeyEvent.KEYCODE_MEDIA_REWIND:
-                mediaPlayer.seekDelta(-UserPreferences.getRewindSecs() * 1000);
+                seekDelta(-UserPreferences.getRewindSecs() * 1000);
                 return true;
             case KeyEvent.KEYCODE_MEDIA_STOP:
                 if (status == PlayerStatus.PLAYING) {
@@ -840,6 +870,9 @@ public class PlaybackService extends MediaBrowserServiceCompat {
         public void onPostPlayback(@NonNull Playable media, boolean ended, boolean skipped,
                                    boolean playingNext) {
             PlaybackService.this.onPostPlayback(media, ended, skipped, playingNext);
+
+            // Log the end of episode.
+            mMakingHistoryAnalytics.reportEndOfPlayback(media, getCurrentPosition() / 1000, !ended);
         }
 
         @Override
@@ -1546,12 +1579,22 @@ public class PlaybackService extends MediaBrowserServiceCompat {
 
 
     public void seekTo(final int t) {
+        int currentPosition = getCurrentPosition();
         mediaPlayer.seekTo(t);
+
+        // Log the press of fast forward.
+        mMakingHistoryAnalytics.reportFastForward(getPlayable(), getCurrentPosition() / 1000, (t - currentPosition) / 1000);
     }
 
 
     private void seekDelta(final int d) {
         mediaPlayer.seekDelta(d);
+
+        if (d == UserPreferences.getFastForwardSecs() * 1000)
+        {
+            // Log the press of fast forward.
+            mMakingHistoryAnalytics.reportFastForward(getPlayable(), getCurrentPosition() / 1000, d / 1000);
+        }
     }
 
     /**
