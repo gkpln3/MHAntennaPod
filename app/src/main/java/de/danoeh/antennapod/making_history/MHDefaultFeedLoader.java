@@ -61,13 +61,6 @@ public class MHDefaultFeedLoader {
             @Override
             public void onFailure(Call call, IOException e) {
                 Log.d(TAG, Log.getStackTraceString(e));
-                activity.runOnUiThread(() -> {
-                    String message = activity.getString(R.string.opml_reader_error);
-                    new AlertDialog.Builder(activity)
-                            .setMessage(message + " " + e.getMessage())
-                            .setPositiveButton(android.R.string.ok, null)
-                            .show();
-                });
             }
 
             @Override

@@ -1,6 +1,7 @@
 package de.danoeh.antennapod.activity;
 
 import android.Manifest;
+import android.animation.Animator;
 import android.annotation.TargetApi;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -345,15 +346,19 @@ public abstract class MediaplayerActivity extends CastEnabledActivity implements
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP
                     | Intent.FLAG_ACTIVITY_NEW_TASK);
 
-            View cover = findViewById(R.id.imgvCover);
-            if (cover != null) {
-                ActivityOptionsCompat options = ActivityOptionsCompat
-                        .makeSceneTransitionAnimation(MediaplayerActivity.this, cover, "coverTransition");
-                startActivity(intent, options.toBundle());
-            } else {
-                startActivity(intent);
-            }
-            finish();
+            // Hide the web view and then close the view when the animation ends.
+            findViewById(R.id.adsWebView).animate().setDuration(100).alpha(0f).withEndAction(() -> {
+                View cover = findViewById(R.id.imgvCover);
+                if (cover != null) {
+                    ActivityOptionsCompat options = ActivityOptionsCompat
+                            .makeSceneTransitionAnimation(MediaplayerActivity.this, cover, "coverTransition");
+                    startActivity(intent, options.toBundle());
+                } else {
+                    startActivity(intent);
+                }
+                finish();
+            });
+
             return true;
         } else {
             if (media != null) {
