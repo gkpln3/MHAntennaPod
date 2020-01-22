@@ -324,7 +324,7 @@
         </receiver>
 
         <provider
-            android:authorities="@string/provider_authority"
+            android:authorities="${applicationId}"
             android:name="androidx.core.content.FileProvider"
             android:exported="false"
             android:grantUriPermissions="true">
@@ -332,6 +332,15 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/provider_paths"/>
         </provider>
+        
+        <provider
+            android:authorities="${applicationId}"
+            android:name="de.danoeh.antennapod.PodcastApp"
+            />
+
+        <meta-data
+                    android:name="com.google.android.gms.car.application"
+                    android:resource="@xml/automotive_app_desc"/>
     </application>
 
 </manifest>
