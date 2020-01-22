@@ -1,12 +1,18 @@
 package de.danoeh.antennapod.fragment;
 
 import android.graphics.drawable.Drawable;
+import android.animation.Animator;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
@@ -43,6 +49,8 @@ public class CoverFragment extends Fragment {
     private TextView txtvPodcastTitle;
     private TextView txtvEpisodeTitle;
     private ImageView imgvCover;
+    private WebView adsWebView;
+    private FrameLayout adsWebViewHolder;
     private PlaybackController controller;
     private Disposable disposable;
     private int displayedChapterIndex = -2;
@@ -57,6 +65,8 @@ public class CoverFragment extends Fragment {
         txtvEpisodeTitle = root.findViewById(R.id.txtvEpisodeTitle);
         imgvCover = root.findViewById(R.id.imgvCover);
         imgvCover.setOnClickListener(v -> onPlayPause());
+        adsWebView = root.findViewById(R.id.adsWebView);
+        adsWebViewHolder = root.findViewById(R.id.adsWebViewHolder);
         return root;
     }
 
@@ -85,6 +95,41 @@ public class CoverFragment extends Fragment {
         txtvEpisodeTitle.setText(media.getEpisodeTitle());
         displayedChapterIndex = -2; // Force refresh
         displayCoverImage(media.getPosition());
+        Glide.with(this)
+                .load(ImageResourceUtils.getImageLocation(media))
+                .apply(new RequestOptions()
+                    .diskCacheStrategy(ApGlideSettings.AP_DISK_CACHE_STRATEGY)
+                    .dontAnimate()
+                    .fitCenter())
+                .into(imgvCover);
+
+        configureAdsWebView(media);
+    }
+
+    private void configureAdsWebView(@NonNull Playable media)
+    {
+        adsWebView.loadUrl("https://www.ranlevi.com/");
+        adsWebView.setWebViewClient(new WebViewClient()
+        {
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+
+                adsWebViewHolder.animate().alpha(1f);
+                adsWebView.setVisibility(View.VISIBLE);
+            }
+
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                if (url != null && (url.startsWith("http://") || url.startsWith("https://"))) {
+                    view.getContext().startActivity(
+                            new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        });
     }
 
     @Override

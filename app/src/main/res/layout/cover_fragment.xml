@@ -34,6 +34,38 @@
         android:textIsSelectable="true"
         tools:text="Podcast" />
 
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:transitionName="coverTransition"
+        android:layout_weight="0.5" >
+
+        <ImageView
+            android:id="@+id/imgvCover"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:contentDescription="@string/cover_label"
+            android:scaleType="fitCenter"
+            tools:src="@android:drawable/sym_def_app_icon"
+            android:foreground="?attr/selectableItemBackground" />
+
+        <FrameLayout
+            android:id="@+id/adsWebViewHolder"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:alpha="0" >
+
+            <WebView
+                android:id="@+id/adsWebView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+        </FrameLayout>
+
+    </FrameLayout>
+
+
     <TextView
         android:id="@+id/txtvEpisodeTitle"
         android:layout_width="match_parent"
