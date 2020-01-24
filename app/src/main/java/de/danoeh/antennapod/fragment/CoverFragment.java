@@ -2,10 +2,15 @@ package de.danoeh.antennapod.fragment;
 
 import android.graphics.drawable.Drawable;
 import android.animation.Animator;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
+
+import androidx.activity.OnBackPressedCallback;
+import androidx.annotation.NonNull;
+import androidx.fragment.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -67,6 +72,7 @@ public class CoverFragment extends Fragment {
         imgvCover.setOnClickListener(v -> onPlayPause());
         adsWebView = root.findViewById(R.id.adsWebView);
         adsWebViewHolder = root.findViewById(R.id.adsWebViewHolder);
+
         return root;
     }
 
@@ -117,6 +123,21 @@ public class CoverFragment extends Fragment {
 
                 adsWebViewHolder.animate().alpha(1f);
                 adsWebView.setVisibility(View.VISIBLE);
+
+                if (getActivity() != null)
+                {
+                    getActivity().getOnBackPressedDispatcher().addCallback(new OnBackPressedCallback(true) {
+                        @Override
+                        public void handleOnBackPressed() {
+                            adsWebViewHolder.animate().setDuration(100).alpha(0f).withEndAction(() ->
+                            {
+                                this.setEnabled(false);
+                                if (getActivity() != null)
+                                    getActivity().onBackPressed();
+                            });
+                        }
+                    });
+                }
             }
 
             @Override
