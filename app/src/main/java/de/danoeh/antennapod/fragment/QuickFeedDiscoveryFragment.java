@@ -19,6 +19,8 @@ import de.danoeh.antennapod.activity.OnlineFeedViewActivity;
 import de.danoeh.antennapod.adapter.FeedDiscoverAdapter;
 import de.danoeh.antennapod.discovery.ItunesTopListLoader;
 import de.danoeh.antennapod.discovery.PodcastSearchResult;
+import de.danoeh.antennapod.making_history.MHDiscoverListLoader;
+import de.danoeh.antennapod.making_history.MHDiscoverSearchFragment;
 import io.reactivex.disposables.Disposable;
 
 import java.util.ArrayList;
@@ -41,7 +43,7 @@ public class QuickFeedDiscoveryFragment extends Fragment implements AdapterView.
         View root = inflater.inflate(R.layout.quick_feed_discovery, container, false);
         View discoverMore = root.findViewById(R.id.discover_more);
         discoverMore.setOnClickListener(v ->
-                ((MainActivity) getActivity()).loadChildFragment(new ItunesSearchFragment()));
+                ((MainActivity) getActivity()).loadChildFragment(new MHDiscoverSearchFragment()));
 
         discoverGridLayout = root.findViewById(R.id.discover_grid);
         progressBar = root.findViewById(R.id.discover_progress_bar);
@@ -84,8 +86,8 @@ public class QuickFeedDiscoveryFragment extends Fragment implements AdapterView.
         discoverGridLayout.setVisibility(View.INVISIBLE);
         errorTextView.setVisibility(View.GONE);
 
-        ItunesTopListLoader loader = new ItunesTopListLoader(getContext());
-        disposable = loader.loadToplist(NUM_SUGGESTIONS)
+        MHDiscoverListLoader loader = new MHDiscoverListLoader(getContext());
+        disposable = loader.loadToplist(true)
                 .subscribe(podcasts -> {
                     errorTextView.setVisibility(View.GONE);
                     progressBar.setVisibility(View.GONE);
@@ -107,7 +109,7 @@ public class QuickFeedDiscoveryFragment extends Fragment implements AdapterView.
             return;
         }
         view.setAlpha(0.5f);
-        ItunesTopListLoader loader = new ItunesTopListLoader(getContext());
+        MHDiscoverListLoader loader = new MHDiscoverListLoader(getContext());
         disposable = loader.getFeedUrl(podcast)
                 .subscribe(feedUrl -> {
                     view.setAlpha(1f);

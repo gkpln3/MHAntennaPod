@@ -1,11 +1,15 @@
 package de.danoeh.antennapod.discovery;
 
 import androidx.annotation.Nullable;
-import de.danoeh.antennapod.core.sync.gpoddernet.model.GpodnetPodcast;
+
+import de.danoeh.antennapod.core.CastCallbacks;
+import de.danoeh.antennapod.core.gpoddernet.model.GpodnetPodcast;
 import de.mfietz.fyydlin.SearchHit;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.util.Locale;
 
 public class PodcastSearchResult {
 
@@ -30,6 +34,19 @@ public class PodcastSearchResult {
      */
     @Nullable
     public final String author;
+    
+    /*
+     * Category for MakingHistory's israelis podcasts list.
+     */
+    @Nullable
+    public final String category;
+
+    private PodcastSearchResult(String title, @Nullable String imageUrl, @Nullable String feedUrl, @Nullable String category) {
+        this.title = title;
+        this.imageUrl = imageUrl;
+        this.feedUrl = feedUrl;
+        this.category = category;
+    }
 
 
     private PodcastSearchResult(String title, @Nullable String imageUrl, @Nullable String feedUrl, @Nullable String author) {
@@ -41,10 +58,20 @@ public class PodcastSearchResult {
 
     private PodcastSearchResult(String title, @Nullable String imageUrl, @Nullable String feedUrl) {
         this(title, imageUrl, feedUrl, "");
+        this.category = null;
     }
 
     public static PodcastSearchResult dummy() {
         return new PodcastSearchResult("", "", "", "");
+    }
+
+    public static PodcastSearchResult fromMakingHistoryDiscover(JSONObject json)
+    {
+        String title = json.optString("title", "");
+        String imageUrl = json.optString("image", null);
+        String feedUrl = json.optString("feed", null);
+        String category = json.optString("category", null);
+        return new PodcastSearchResult(title, imageUrl, feedUrl, category);
     }
 
     /**
