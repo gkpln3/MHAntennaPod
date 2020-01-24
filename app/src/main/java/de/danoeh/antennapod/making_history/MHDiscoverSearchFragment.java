@@ -15,6 +15,8 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Adapter;
+import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.GridView;
 import android.widget.ProgressBar;
@@ -24,6 +26,7 @@ import de.danoeh.antennapod.discovery.ItunesPodcastSearcher;
 import de.danoeh.antennapod.discovery.ItunesTopListLoader;
 import de.danoeh.antennapod.discovery.PodcastSearchResult;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,6 +36,8 @@ import de.danoeh.antennapod.adapter.itunes.ItunesAdapter;
 import de.danoeh.antennapod.making_history.MHDiscoverListLoader;
 import de.danoeh.antennapod.making_history.MHDiscoverListSearcher;
 import de.danoeh.antennapod.menuhandler.MenuItemUtils;
+import dev.dworks.libs.astickyheader.SectionedGridAdapter;
+import dev.dworks.libs.astickyheader.SimpleSectionedGridAdapter;
 import io.reactivex.disposables.Disposable;
 
 //Searches iTunes store for given string and displays results in a list
@@ -45,6 +50,7 @@ public class MHDiscoverSearchFragment extends Fragment {
      * Adapter responsible with the search results
      */
     private ItunesAdapter adapter;
+    private SimpleSectionedGridAdapter sectionedGridAdapter;
     private GridView gridView;
     private ProgressBar progressBar;
     private TextView txtvError;
@@ -71,7 +77,7 @@ public class MHDiscoverSearchFragment extends Fragment {
             for (PodcastSearchResult p : result) {
                 adapter.add(p);
             }
-            adapter.notifyDataSetInvalidated();
+            sectionedGridAdapter.notifyDataSetInvalidated();
         } else {
             gridView.setVisibility(View.GONE);
             txtvEmpty.setVisibility(View.VISIBLE);
@@ -95,14 +101,15 @@ public class MHDiscoverSearchFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        View root = inflater.inflate(R.layout.fragment_itunes_search, container, false);
+        View root = inflater.inflate(R.layout.fragment_making_history_search, container, false);
         gridView = root.findViewById(R.id.gridView);
         adapter = new ItunesAdapter(getActivity(), new ArrayList<>());
-        gridView.setAdapter(adapter);
+        sectionedGridAdapter = setupSectionedAdapter(gridView, adapter);
+        gridView.setAdapter(sectionedGridAdapter);
 
         //Show information about the podcast when the list item is clicked
         gridView.setOnItemClickListener((parent, view1, position, id) -> {
-            PodcastSearchResult podcast = searchResults.get(position);
+            PodcastSearchResult podcast = (PodcastSearchResult)sectionedGridAdapter.getItem(position);
             if (podcast.feedUrl == null) {
                 return;
             }
@@ -232,6 +239,15 @@ public class MHDiscoverSearchFragment extends Fragment {
             butRetry.setOnClickListener(v -> search(query));
             butRetry.setVisibility(View.VISIBLE);
         });
+    }
+
+
+    private SimpleSectionedGridAdapter setupSectionedAdapter(GridView gridView, BaseAdapter baseAdapter)
+    {
+        SimpleSectionedGridAdapter adapter = new SimpleSectionedGridAdapter(getContext(), baseAdapter, R.layout.grid_item_header, R.id.header_layout, R.id.header);
+        adapter.setGridView(gridView);
+        adapter.setSections(new SimpleSectionedGridAdapter.Section(0, "LALALALALALALALALA"));
+        return adapter;
     }
 
 }
