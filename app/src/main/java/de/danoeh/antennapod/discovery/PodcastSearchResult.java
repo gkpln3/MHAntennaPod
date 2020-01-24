@@ -70,7 +70,7 @@ public class PodcastSearchResult {
         String title = json.optString("title", "");
         String imageUrl = json.optString("image", null);
         String feedUrl = json.optString("feed", null);
-        String category = json.optString("category", null);
+        String category = json.optString("category", "No category");
         return new PodcastSearchResult(title, imageUrl, feedUrl, category);
     }
 
