@@ -28,6 +28,8 @@ import de.danoeh.antennapod.discovery.PodcastSearchResult;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import de.danoeh.antennapod.R;
@@ -43,7 +45,7 @@ import io.reactivex.disposables.Disposable;
 //Searches iTunes store for given string and displays results in a list
 public class MHDiscoverSearchFragment extends Fragment {
 
-    private static final String TAG = "ItunesSearchFragment";
+    private static final String TAG = "MHDiscoverSearchFragment";
 
 
     /**
@@ -70,6 +72,11 @@ public class MHDiscoverSearchFragment extends Fragment {
      */
     private void updateData(List<PodcastSearchResult> result) {
         this.searchResults = result;
+
+        // Set sections needs to be called here so it will sort the search results because they
+        // are being used.
+        setSections(sectionedGridAdapter);
+
         adapter.clear();
         if (result != null && result.size() > 0) {
             gridView.setVisibility(View.VISIBLE);
@@ -202,7 +209,7 @@ public class MHDiscoverSearchFragment extends Fragment {
         progressBar.setVisibility(View.VISIBLE);
 
         MHDiscoverListLoader loader = new MHDiscoverListLoader(getContext());
-        disposable = loader.loadToplist(true)
+        disposable = loader.loadToplist(false)
                 .subscribe(podcasts -> {
                     progressBar.setVisibility(View.GONE);
                     topList = podcasts;
@@ -246,9 +253,50 @@ public class MHDiscoverSearchFragment extends Fragment {
     {
         SimpleSectionedGridAdapter adapter = new SimpleSectionedGridAdapter(getContext(), baseAdapter, R.layout.grid_item_header, R.id.header_layout, R.id.header);
         adapter.setGridView(gridView);
-        adapter.setSections(new SimpleSectionedGridAdapter.Section(0, "LALALALALALALALALA"));
+        setSections(adapter);
         return adapter;
     }
 
+    private void setSections(SimpleSectionedGridAdapter adapter)
+    {
+        if (searchResults == null)
+            return;
+
+        List<SimpleSectionedGridAdapter.Section> sections = new ArrayList<>();
+        Collections.sort(searchResults, new Comparator<PodcastSearchResult>() {
+            @Override
+            public int compare(PodcastSearchResult podcastSearchResult, PodcastSearchResult t1) {
+                // No categorized to the end of the list.
+                if (podcastSearchResult.category == null)
+                    return 1;
+                if (t1.category == null)
+                    return -1;
+                if (t1.category.equalsIgnoreCase("No Category"))
+                    return -1;
+
+                // Put top podcasts on top.
+                if (podcastSearchResult.category.equalsIgnoreCase("Top") || podcastSearchResult.category.equalsIgnoreCase("Recommended") || podcastSearchResult.category.contains("מומלצים"))
+                    return -1;
+
+
+                return podcastSearchResult.category.compareTo(t1.category);
+            }
+        });
+
+
+        if (searchResults.get(0).category != null) {
+            // Add the first category.
+            sections.add(new SimpleSectionedGridAdapter.Section(0, searchResults.get(0).category));
+
+            for (int i = 1; i < searchResults.size(); i++) {
+                if (searchResults.get(i).category == null)
+                    continue;
+
+                if (!searchResults.get(i).category.equals(searchResults.get(i - 1).category))
+                    sections.add(new SimpleSectionedGridAdapter.Section(i, searchResults.get(i).category));
+            }
+            adapter.setSections(sections.toArray(new SimpleSectionedGridAdapter.Section[0]));
+        }
+    }
 }
 
