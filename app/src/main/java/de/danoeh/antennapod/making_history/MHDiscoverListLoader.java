@@ -35,6 +35,18 @@ public class MHDiscoverListLoader {
             OkHttpClient client = AntennapodHttpClient.getHttpClient();
             String feedString = getTopListFeed(loadTopOnly ? TOP_DISCOVER_JSON_URL : ALL_ISRAELI_DISCOVER_JSON_URL, client);
             List<PodcastSearchResult> podcasts = parseFeed(feedString);
+
+            // Filter only podcasts that are on the TOP category.
+            if (loadTopOnly)
+            {
+                List<PodcastSearchResult> result = new ArrayList<>();
+                for (PodcastSearchResult podcast : podcasts) {
+                    if ("Top".equalsIgnoreCase(podcast.category)) { // we dont like mkyong
+                        result.add(podcast);
+                    }
+                }
+                podcasts = result;
+            }
             emitter.onSuccess(podcasts);
         })
                 .subscribeOn(Schedulers.io())

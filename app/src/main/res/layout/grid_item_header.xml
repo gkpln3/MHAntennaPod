@@ -7,7 +7,7 @@
     <TextView
         android:id="@+id/header"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="30dp"
         android:singleLine="true"
         android:text="Header"
         android:textAllCaps="true"

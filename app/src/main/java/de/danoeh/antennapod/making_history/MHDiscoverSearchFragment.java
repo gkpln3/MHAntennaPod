@@ -271,12 +271,16 @@ public class MHDiscoverSearchFragment extends Fragment {
                     return 1;
                 if (t1.category == null)
                     return -1;
+                if (podcastSearchResult.category.equalsIgnoreCase("No Category"))
+                    return 1;
                 if (t1.category.equalsIgnoreCase("No Category"))
                     return -1;
 
                 // Put top podcasts on top.
                 if (podcastSearchResult.category.equalsIgnoreCase("Top") || podcastSearchResult.category.equalsIgnoreCase("Recommended") || podcastSearchResult.category.contains("מומלצים"))
                     return -1;
+                if (t1.category.equalsIgnoreCase("Top") || t1.category.equalsIgnoreCase("Recommended") || t1.category.contains("מומלצים"))
+                    return 1;
 
 
                 return podcastSearchResult.category.compareTo(t1.category);
