@@ -112,6 +112,7 @@ public class MHDiscoverSearchFragment extends Fragment {
         gridView = root.findViewById(R.id.gridView);
         adapter = new ItunesAdapter(getActivity(), new ArrayList<>());
         sectionedGridAdapter = setupSectionedAdapter(gridView, adapter);
+        gridView.setNumColumns(1);
         gridView.setAdapter(sectionedGridAdapter);
 
         //Show information about the podcast when the list item is clicked
