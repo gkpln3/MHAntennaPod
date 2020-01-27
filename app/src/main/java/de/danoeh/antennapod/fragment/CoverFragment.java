@@ -12,6 +12,7 @@ import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import android.util.Log;
+import android.util.Patterns;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,6 +28,10 @@ import com.bumptech.glide.load.resource.bitmap.FitCenter;
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners;
 import com.bumptech.glide.RequestBuilder;
 import com.bumptech.glide.request.RequestOptions;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import de.danoeh.antennapod.R;
 import de.danoeh.antennapod.core.event.PlaybackPositionEvent;
 import de.danoeh.antennapod.core.feed.util.ImageResourceUtils;
@@ -114,43 +119,56 @@ public class CoverFragment extends Fragment {
 
     private void configureAdsWebView(@NonNull Playable media)
     {
-        adsWebView.loadUrl("https://www.ranlevi.com/");
-        adsWebView.setWebViewClient(new WebViewClient()
+        try {
+            Matcher matcher = Patterns.WEB_URL.matcher(media.loadShownotes().call());
+            String url = null;
+            while (matcher.find())
+                url = matcher.group(0);
+            if (url == null)
+                return;
+
+            adsWebView.loadUrl(url);
+            adsWebView.setWebViewClient(new WebViewClient()
+            {
+                @Override
+                public void onPageFinished(WebView view, String url) {
+                    super.onPageFinished(view, url);
+
+                    adsWebViewHolder.animate().alpha(1f);
+                    adsWebView.setVisibility(View.VISIBLE);
+
+                    if (getActivity() != null)
+                    {
+                        getActivity().getOnBackPressedDispatcher().addCallback(new OnBackPressedCallback(true) {
+                            @Override
+                            public void handleOnBackPressed() {
+                                adsWebViewHolder.animate().setDuration(100).alpha(0f).withEndAction(() ->
+                                {
+                                    this.setEnabled(false);
+                                    if (getActivity() != null)
+                                        getActivity().onBackPressed();
+                                });
+                            }
+                        });
+                    }
+                }
+
+                @Override
+                public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                    if (url != null && (url.startsWith("http://") || url.startsWith("https://"))) {
+                        view.getContext().startActivity(
+                                new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+                        return true;
+                    } else {
+                        return false;
+                    }
+                }
+            });
+        }
+        catch (Exception e)
         {
-            @Override
-            public void onPageFinished(WebView view, String url) {
-                super.onPageFinished(view, url);
-
-                adsWebViewHolder.animate().alpha(1f);
-                adsWebView.setVisibility(View.VISIBLE);
-
-                if (getActivity() != null)
-                {
-                    getActivity().getOnBackPressedDispatcher().addCallback(new OnBackPressedCallback(true) {
-                        @Override
-                        public void handleOnBackPressed() {
-                            adsWebViewHolder.animate().setDuration(100).alpha(0f).withEndAction(() ->
-                            {
-                                this.setEnabled(false);
-                                if (getActivity() != null)
-                                    getActivity().onBackPressed();
-                            });
-                        }
-                    });
-                }
-            }
-
-            @Override
-            public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                if (url != null && (url.startsWith("http://") || url.startsWith("https://"))) {
-                    view.getContext().startActivity(
-                            new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
-                    return true;
-                } else {
-                    return false;
-                }
-            }
-        });
+            e.printStackTrace();
+        }
     }
 
     @Override
