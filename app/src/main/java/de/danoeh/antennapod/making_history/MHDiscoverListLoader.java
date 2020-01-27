@@ -23,8 +23,8 @@ import java.util.Locale;
 
 public class MHDiscoverListLoader {
     private final Context context;
-    private final String TOP_DISCOVER_JSON_URL = "https://sites.google.com/site/gkpln3/mh_discover_feed.json";
-    private final String ALL_ISRAELI_DISCOVER_JSON_URL = "https://sites.google.com/site/gkpln3/mh_discover_feed.json";
+    private final String TOP_DISCOVER_JSON_URL = "https://firebasestorage.googleapis.com/v0/b/makinghistory-1579519443087.appspot.com/o/mh_discover_feed.json?alt=media";
+    private final String ALL_ISRAELI_DISCOVER_JSON_URL = TOP_DISCOVER_JSON_URL;
 
     public MHDiscoverListLoader(Context context) {
         this.context = context;
