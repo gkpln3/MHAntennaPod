@@ -47,7 +47,7 @@ import static android.os.AsyncTask.THREAD_POOL_EXECUTOR;
 
 public class MHDefaultFeedLoader {
     private final static String TAG = "MHDefaultFeedLoader";
-    private final static String OPML_FEED_URL = "https://sites.google.com/site/gkpln3/default_opml.xml";
+    private final static String OPML_FEED_URL = "https://firebasestorage.googleapis.com/v0/b/makinghistory-1579519443087.appspot.com/o/default_opml.xml?alt=media";
     private final static String SHARED_PREFERENCES_NAME = "MH_SHARED_PREFERENCES";
     private final static String OPML_HASH_PREF_NAME = "OPML_HASH";
     private final static String UNWANTED_FEEDS_LIST_PREF_NAME = "UNWANTED_FEEDS_LIST";
