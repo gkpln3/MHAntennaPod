@@ -11,6 +11,7 @@ import android.text.TextUtils;
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+
 import android.util.Log;
 import android.util.Patterns;
 import android.view.LayoutInflater;
@@ -29,6 +30,8 @@ import com.bumptech.glide.load.resource.bitmap.RoundedCorners;
 import com.bumptech.glide.RequestBuilder;
 import com.bumptech.glide.request.RequestOptions;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -109,16 +112,26 @@ public class CoverFragment extends Fragment {
         Glide.with(this)
                 .load(ImageResourceUtils.getImageLocation(media))
                 .apply(new RequestOptions()
-                    .diskCacheStrategy(ApGlideSettings.AP_DISK_CACHE_STRATEGY)
-                    .dontAnimate()
-                    .fitCenter())
+                        .diskCacheStrategy(ApGlideSettings.AP_DISK_CACHE_STRATEGY)
+                        .dontAnimate()
+                        .fitCenter())
                 .into(imgvCover);
 
         configureAdsWebView(media);
     }
 
-    private void configureAdsWebView(@NonNull Playable media)
-    {
+    private Boolean isMHAdsURL(String url) {
+        try {
+            URL obj = new URL(url);
+            String host = obj.getHost(); // should be www.facebook.com
+
+            return host.equals("www.ads.ranlevi.com");
+        } catch (Exception e){
+            return false;
+        }
+    }
+
+    private void configureAdsWebView(@NonNull Playable media) {
         try {
             Matcher matcher = Patterns.WEB_URL.matcher(media.loadShownotes().call());
             String url = null;
@@ -127,9 +140,13 @@ public class CoverFragment extends Fragment {
             if (url == null)
                 return;
 
+            if (!isMHAdsURL(url)) {
+                return;
+            }
+
             adsWebView.loadUrl(url);
-            adsWebView.setWebViewClient(new WebViewClient()
-            {
+
+            adsWebView.setWebViewClient(new WebViewClient() {
                 @Override
                 public void onPageFinished(WebView view, String url) {
                     super.onPageFinished(view, url);
@@ -137,8 +154,7 @@ public class CoverFragment extends Fragment {
                     adsWebViewHolder.animate().alpha(1f);
                     adsWebView.setVisibility(View.VISIBLE);
 
-                    if (getActivity() != null)
-                    {
+                    if (getActivity() != null) {
                         getActivity().getOnBackPressedDispatcher().addCallback(new OnBackPressedCallback(true) {
                             @Override
                             public void handleOnBackPressed() {
@@ -164,9 +180,7 @@ public class CoverFragment extends Fragment {
                     }
                 }
             });
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
