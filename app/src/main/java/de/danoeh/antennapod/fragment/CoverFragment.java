@@ -144,8 +144,6 @@ public class CoverFragment extends Fragment {
                 return;
             }
 
-            adsWebView.loadUrl(url);
-
             adsWebView.setWebViewClient(new WebViewClient() {
                 @Override
                 public void onPageFinished(WebView view, String url) {
@@ -180,6 +178,8 @@ public class CoverFragment extends Fragment {
                     }
                 }
             });
+
+            adsWebView.loadUrl(url);
         } catch (Exception e) {
             e.printStackTrace();
         }
