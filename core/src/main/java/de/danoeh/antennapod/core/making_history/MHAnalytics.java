@@ -17,6 +17,8 @@ public class MHAnalytics {
 
     public void reportStartOfPlayback(Playable playable)
     {
+        if (playable == null) return;
+
         Bundle bundle = new Bundle();
         bundle.putString(FirebaseAnalytics.Param.ITEM_ID, playable.getStreamUrl());
         bundle.putString(FirebaseAnalytics.Param.ITEM_NAME, playable.getEpisodeTitle());
@@ -26,6 +28,8 @@ public class MHAnalytics {
 
     public void reportQueueInEpisode(Playable playable, int secondsInEpisode)
     {
+        if (playable == null) return;
+
         Bundle bundle = new Bundle();
         bundle.putString(FirebaseAnalytics.Param.ITEM_ID, playable.getStreamUrl());
         bundle.putString(FirebaseAnalytics.Param.ITEM_NAME, playable.getEpisodeTitle());
@@ -35,6 +39,8 @@ public class MHAnalytics {
 
     public void reportEndOfPlayback(Playable playable, int secondsInEpisode, boolean didSkip)
     {
+        if (playable == null) return;
+
         Bundle bundle = new Bundle();
         bundle.putString(FirebaseAnalytics.Param.ITEM_ID, playable.getStreamUrl());
         bundle.putString(FirebaseAnalytics.Param.ITEM_NAME, playable.getEpisodeTitle());
@@ -45,6 +51,8 @@ public class MHAnalytics {
 
     public void reportFastForward(Playable playable, int secondsInEpisode, int delta)
     {
+        if (playable == null) return;
+
         Bundle bundle = new Bundle();
         bundle.putString(FirebaseAnalytics.Param.ITEM_ID, playable.getStreamUrl());
         bundle.putString(FirebaseAnalytics.Param.ITEM_NAME, playable.getEpisodeTitle());
