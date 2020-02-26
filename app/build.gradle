@@ -14,7 +14,7 @@ android {
     defaultConfig {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        multiDexEnabled false
+        multiDexEnabled true
         vectorDrawables.useSupportLibrary true
         // Version code schema:
         // "1.2.3-SNAPSHOT" -> 1020300

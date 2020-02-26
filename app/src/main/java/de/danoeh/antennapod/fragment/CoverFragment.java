@@ -169,7 +169,7 @@ public class CoverFragment extends Fragment {
 
                 @Override
                 public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                    if (url != null && (url.startsWith("http://") || url.startsWith("https://"))) {
+                    if (url != null && (url.startsWith("http://") || url.startsWith("https://")) && !url.contains("ads.ranlevi.com")) {
                         view.getContext().startActivity(
                                 new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
                         return true;
@@ -180,6 +180,7 @@ public class CoverFragment extends Fragment {
             });
 
             adsWebView.loadUrl(url);
+
         } catch (Exception e) {
             e.printStackTrace();
         }
