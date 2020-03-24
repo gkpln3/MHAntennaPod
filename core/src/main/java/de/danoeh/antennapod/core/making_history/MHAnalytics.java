@@ -60,4 +60,14 @@ public class MHAnalytics {
         bundle.putInt("seek_delta", delta);
         mFirebaseAnalytics.logEvent("seek_to", bundle);
     }
+
+    public void reportAdClicked(Playable playable, String adAddress, String sentToAddress) {
+        if (playable == null) return;
+        Bundle bundle = new Bundle();
+        bundle.putString(FirebaseAnalytics.Param.ITEM_ID, playable.getStreamUrl());
+        bundle.putString(FirebaseAnalytics.Param.ITEM_NAME, playable.getEpisodeTitle());
+        bundle.putString("ad_address", adAddress);
+        bundle.putString("sent_to_address", sentToAddress);
+        mFirebaseAnalytics.logEvent("ad_clicked", bundle);
+    }
 }

@@ -39,6 +39,7 @@ import de.danoeh.antennapod.R;
 import de.danoeh.antennapod.core.event.PlaybackPositionEvent;
 import de.danoeh.antennapod.core.feed.util.ImageResourceUtils;
 import de.danoeh.antennapod.core.glide.ApGlideSettings;
+import de.danoeh.antennapod.core.making_history.MHAnalytics;
 import de.danoeh.antennapod.core.util.ChapterUtils;
 import de.danoeh.antennapod.core.util.EmbeddedChapterImage;
 import de.danoeh.antennapod.core.util.playback.Playable;
@@ -68,6 +69,8 @@ public class CoverFragment extends Fragment {
     private Disposable disposable;
     private int displayedChapterIndex = -2;
     private Playable media;
+    private String advUrl;
+    private MHAnalytics mMHAnalytics;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -80,6 +83,7 @@ public class CoverFragment extends Fragment {
         imgvCover.setOnClickListener(v -> onPlayPause());
         adsWebView = root.findViewById(R.id.adsWebView);
         adsWebViewHolder = root.findViewById(R.id.adsWebViewHolder);
+        mMHAnalytics = new MHAnalytics(this.getContext());
 
         return root;
     }
@@ -134,13 +138,14 @@ public class CoverFragment extends Fragment {
     private void configureAdsWebView(@NonNull Playable media) {
         try {
             Matcher matcher = Patterns.WEB_URL.matcher(media.loadShownotes().call());
-            String url = null;
+            advUrl = null;
             while (matcher.find())
-                url = matcher.group(0);
-            if (url == null)
+                advUrl = matcher.group(0);
+            if (advUrl == null)
                 return;
 
-            if (!isMHAdsURL(url)) {
+            if (!isMHAdsURL(advUrl)) {
+                advUrl = null;
                 return;
             }
 
@@ -170,6 +175,7 @@ public class CoverFragment extends Fragment {
                 @Override
                 public boolean shouldOverrideUrlLoading(WebView view, String url) {
                     if (url != null && (url.startsWith("http://") || url.startsWith("https://")) && !url.contains("ads.ranlevi.com")) {
+                        mMHAnalytics.reportAdClicked(media, advUrl, url);
                         view.getContext().startActivity(
                                 new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
                         return true;
@@ -179,7 +185,7 @@ public class CoverFragment extends Fragment {
                 }
             });
 
-            adsWebView.loadUrl(url);
+            adsWebView.loadUrl(advUrl);
 
         } catch (Exception e) {
             e.printStackTrace();
