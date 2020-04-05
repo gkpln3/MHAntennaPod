@@ -26,7 +26,6 @@ import java.util.concurrent.Callable;
 
 import de.danoeh.antennapod.R;
 import de.danoeh.antennapod.activity.MainActivity;
-import de.danoeh.antennapod.activity.MediaplayerInfoActivity;
 import de.danoeh.antennapod.adapter.SubscriptionsAdapter;
 import de.danoeh.antennapod.core.asynctask.FeedRemover;
 import de.danoeh.antennapod.core.dialog.ConfirmationDialog;

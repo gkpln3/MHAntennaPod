@@ -3,7 +3,6 @@ package de.danoeh.antennapod.discovery;
 import androidx.annotation.Nullable;
 
 import de.danoeh.antennapod.core.CastCallbacks;
-import de.danoeh.antennapod.core.gpoddernet.model.GpodnetPodcast;
 import de.mfietz.fyydlin.SearchHit;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -41,10 +40,11 @@ public class PodcastSearchResult {
     @Nullable
     public final String category;
 
-    private PodcastSearchResult(String title, @Nullable String imageUrl, @Nullable String feedUrl, @Nullable String category) {
+    private PodcastSearchResult(String title, @Nullable String imageUrl, @Nullable String feedUrl, @Nullable String author, @Nullable String category) {
         this.title = title;
         this.imageUrl = imageUrl;
         this.feedUrl = feedUrl;
+        this.author = author;
         this.category = category;
     }
 
@@ -54,11 +54,11 @@ public class PodcastSearchResult {
         this.imageUrl = imageUrl;
         this.feedUrl = feedUrl;
         this.author = author;
+        this.category = null;
     }
 
     private PodcastSearchResult(String title, @Nullable String imageUrl, @Nullable String feedUrl) {
         this(title, imageUrl, feedUrl, "");
-        this.category = null;
     }
 
     public static PodcastSearchResult dummy() {
@@ -71,7 +71,7 @@ public class PodcastSearchResult {
         String imageUrl = json.optString("image", null);
         String feedUrl = json.optString("feed", null);
         String category = json.optString("category", "No category");
-        return new PodcastSearchResult(title, imageUrl, feedUrl, category);
+        return new PodcastSearchResult(title, imageUrl, feedUrl, "", category);
     }
 
     /**
@@ -121,13 +121,6 @@ public class PodcastSearchResult {
         return new PodcastSearchResult(searchHit.getTitle(),
                                        searchHit.getThumbImageURL(),
                                        searchHit.getXmlUrl(),
-                                       searchHit.getAuthor());
-    }
-
-    public static PodcastSearchResult fromGpodder(GpodnetPodcast searchHit) {
-        return new PodcastSearchResult(searchHit.getTitle(),
-                                       searchHit.getLogoUrl(),
-                                       searchHit.getUrl(),
                                        searchHit.getAuthor());
     }
 }

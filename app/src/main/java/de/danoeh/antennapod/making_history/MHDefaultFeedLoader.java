@@ -30,7 +30,6 @@ import java.util.stream.IntStream;
 import de.danoeh.antennapod.R;
 import de.danoeh.antennapod.activity.MainActivity;
 import de.danoeh.antennapod.activity.OpmlFeedChooserActivity;
-import de.danoeh.antennapod.activity.OpmlImportBaseActivity;
 import de.danoeh.antennapod.activity.OpmlImportHolder;
 import de.danoeh.antennapod.asynctask.OpmlFeedQueuer;
 import de.danoeh.antennapod.asynctask.OpmlImportWorker;

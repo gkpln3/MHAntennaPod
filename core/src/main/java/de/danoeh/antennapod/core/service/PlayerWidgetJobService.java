@@ -176,7 +176,7 @@ public class PlayerWidgetJobService extends SafeJobIntentService {
             views.setViewVisibility(R.id.txtvTitle, View.GONE);
             views.setViewVisibility(R.id.txtNoPlaying, View.VISIBLE);
             views.setImageViewResource(R.id.imgvCover, R.drawable.ic_launcher);
-            views.setImageViewResource(R.id.butPlay, R.drawable.ic_play_arrow_white_48dp);
+            views.setImageViewResource(R.id.butPlay, R.drawable.ic_av_play_white_48dp);
         }
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN) {
