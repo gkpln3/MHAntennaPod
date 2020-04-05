@@ -37,6 +37,7 @@ import de.danoeh.antennapod.core.storage.DBWriter;
 import de.danoeh.antennapod.core.util.FeedItemUtil;
 import de.danoeh.antennapod.core.util.IntentUtils;
 import de.danoeh.antennapod.dialog.RenameFeedDialog;
+import de.danoeh.antennapod.making_history.MHDefaultFeedLoader;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
@@ -216,6 +217,7 @@ public class NavDrawerFragment extends Fragment implements AdapterView.OnItemCli
                             }
                         }
                         remover.executeAsync();
+                        MHDefaultFeedLoader.addUnwantedFeedToList(NavDrawerFragment.this.getContext(), feed.getIdentifyingValue());
                     }
                 };
                 conDialog.createNewDialog().show();

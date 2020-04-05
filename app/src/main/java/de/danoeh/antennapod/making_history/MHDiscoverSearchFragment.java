@@ -117,7 +117,12 @@ public class MHDiscoverSearchFragment extends Fragment {
 
         //Show information about the podcast when the list item is clicked
         gridView.setOnItemClickListener((parent, view1, position, id) -> {
-            PodcastSearchResult podcast = (PodcastSearchResult)sectionedGridAdapter.getItem(position);
+            Object item = sectionedGridAdapter.getItem(position);
+
+            // Ignore presses on the section headers.
+            if (!(item instanceof PodcastSearchResult)) { return; }
+
+            PodcastSearchResult podcast = (PodcastSearchResult)item;
             if (podcast.feedUrl == null) {
                 return;
             }

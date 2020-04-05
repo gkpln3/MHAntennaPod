@@ -141,11 +141,11 @@ public class CoverFragment extends Fragment {
             advUrl = null;
             while (matcher.find())
                 advUrl = matcher.group(0);
-            if (advUrl == null)
-                return;
 
-            if (!isMHAdsURL(advUrl)) {
+            if (advUrl == null || !isMHAdsURL(advUrl)) {
                 advUrl = null;
+
+                adsWebViewHolder.animate().setDuration(100).alpha(0f);
                 return;
             }
 

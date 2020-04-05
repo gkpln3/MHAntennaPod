@@ -1,7 +1,7 @@
 <dev.dworks.libs.astickyheader.ui.HeaderLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/header_layout"
-    android:layout_width="wrap_content"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content" >
 
     <TextView
@@ -9,7 +9,11 @@
         android:layout_width="wrap_content"
         android:layout_height="30dp"
         android:singleLine="true"
-        android:text="Header"
+        android:text="אחר"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textAlignment="viewStart"
+        android:layout_gravity="center"
         android:textAllCaps="true"
         android:textColor="@color/black"
         android:layout_margin="0dp"

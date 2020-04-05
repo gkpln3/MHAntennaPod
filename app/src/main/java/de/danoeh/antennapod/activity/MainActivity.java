@@ -2,6 +2,7 @@ package de.danoeh.antennapod.activity;
 
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
@@ -9,9 +10,12 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
+import android.view.ContextMenu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
@@ -28,11 +32,20 @@ import com.bumptech.glide.Glide;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.snackbar.Snackbar;
 import de.danoeh.antennapod.R;
+import de.danoeh.antennapod.core.asynctask.FeedRemover;
+import de.danoeh.antennapod.core.dialog.ConfirmationDialog;
 import de.danoeh.antennapod.core.event.MessageEvent;
+import de.danoeh.antennapod.core.feed.Feed;
+import de.danoeh.antennapod.core.preferences.PlaybackPreferences;
 import de.danoeh.antennapod.core.preferences.UserPreferences;
+import de.danoeh.antennapod.core.service.playback.PlaybackService;
+import de.danoeh.antennapod.core.storage.DBWriter;
+import de.danoeh.antennapod.core.util.FeedItemUtil;
+import de.danoeh.antennapod.core.util.IntentUtils;
 import de.danoeh.antennapod.core.util.StorageUtils;
 import de.danoeh.antennapod.core.util.download.AutoUpdateManager;
 import de.danoeh.antennapod.dialog.RatingDialog;
+import de.danoeh.antennapod.dialog.RenameFeedDialog;
 import de.danoeh.antennapod.fragment.AddFeedFragment;
 import de.danoeh.antennapod.fragment.AudioPlayerFragment;
 import de.danoeh.antennapod.fragment.DownloadsFragment;
@@ -44,7 +57,6 @@ import de.danoeh.antennapod.fragment.QueueFragment;
 import de.danoeh.antennapod.fragment.SubscriptionFragment;
 import de.danoeh.antennapod.fragment.TransitionEffect;
 import de.danoeh.antennapod.making_history.MHDefaultFeedLoader;
-import de.danoeh.antennapod.menuhandler.NavDrawerActivity;
 import de.danoeh.antennapod.preferences.PreferenceUpgrader;
 import de.danoeh.antennapod.view.LockableBottomSheetBehavior;
 import org.apache.commons.lang3.ArrayUtils;
@@ -170,8 +182,7 @@ public class MainActivity extends CastEnabledActivity {
     private void checkFirstLaunch() {
         SharedPreferences prefs = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
         if (prefs.getBoolean(PREF_IS_FIRST_LAUNCH, true)) {
-            loadFragment(AddFeedFragment.TAG, null);
-            new Handler().postDelayed(() -> drawerLayout.openDrawer(navDrawer), 1500);
+            loadFragment(SubscriptionFragment.TAG, null);
 
             // for backward compatibility, we only change defaults for fresh installs
             UserPreferences.setUpdateInterval(12);
@@ -367,100 +378,6 @@ public class MainActivity extends CastEnabledActivity {
         }
     }
 
-
-    @Override
-    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
-        super.onCreateContextMenu(menu, v, menuInfo);
-        if(v.getId() != R.id.nav_list) {
-            return;
-        }
-        AdapterView.AdapterContextMenuInfo adapterInfo = (AdapterView.AdapterContextMenuInfo) menuInfo;
-        int position = adapterInfo.position;
-        if(position < navAdapter.getSubscriptionOffset()) {
-            return;
-        }
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.nav_feed_context, menu);
-        Feed feed = navDrawerData.feeds.get(position - navAdapter.getSubscriptionOffset());
-        menu.setHeaderTitle(feed.getTitle());
-        // episodes are not loaded, so we cannot check if the podcast has new or unplayed ones!
-    }
-
-
-    @Override
-    public boolean onContextItemSelected(MenuItem item) {
-        final int position = mPosition;
-        mPosition = -1; // reset
-        if(position < 0) {
-            return false;
-        }
-        Feed feed = navDrawerData.feeds.get(position - navAdapter.getSubscriptionOffset());
-        switch(item.getItemId()) {
-            case R.id.remove_all_new_flags_item:
-                ConfirmationDialog removeAllNewFlagsConfirmationDialog = new ConfirmationDialog(this,
-                        R.string.remove_all_new_flags_label,
-                        R.string.remove_all_new_flags_confirmation_msg) {
-                    @Override
-                    public void onConfirmButtonPressed(DialogInterface dialog) {
-                        dialog.dismiss();
-                        DBWriter.removeFeedNewFlag(feed.getId());
-                    }
-                };
-                removeAllNewFlagsConfirmationDialog.createNewDialog().show();
-                return true;
-            case R.id.mark_all_read_item:
-                ConfirmationDialog markAllReadConfirmationDialog = new ConfirmationDialog(this,
-                        R.string.mark_all_read_label,
-                        R.string.mark_all_read_confirmation_msg) {
-
-                    @Override
-                    public void onConfirmButtonPressed(DialogInterface dialog) {
-                        dialog.dismiss();
-                        DBWriter.markFeedRead(feed.getId());
-                    }
-                };
-                markAllReadConfirmationDialog.createNewDialog().show();
-                return true;
-            case R.id.rename_item:
-                new RenameFeedDialog(this, feed).show();
-                return true;
-            case R.id.remove_item:
-                final FeedRemover remover = new FeedRemover(this, feed) {
-                    @Override
-                    protected void onPostExecute(Void result) {
-                        super.onPostExecute(result);
-                        if(getSelectedNavListIndex() == position) {
-                            loadFragment(EpisodesFragment.TAG, null);
-                        }
-                    }
-                };
-                ConfirmationDialog conDialog = new ConfirmationDialog(this,
-                        R.string.remove_feed_label,
-                        getString(R.string.feed_delete_confirmation_msg, feed.getTitle())) {
-                    @Override
-                    public void onConfirmButtonPressed(
-                            DialogInterface dialog) {
-                        dialog.dismiss();
-                        long mediaId = PlaybackPreferences.getCurrentlyPlayingFeedMediaId();
-                        if (mediaId > 0 &&
-                                FeedItemUtil.indexOfItemWithMediaId(feed.getItems(), mediaId) >= 0) {
-                            Log.d(TAG, "Currently playing episode is about to be deleted, skipping");
-                            remover.skipOnCompletion = true;
-                            int playerStatus = PlaybackPreferences.getCurrentPlayerStatus();
-                            if(playerStatus == PlaybackPreferences.PLAYER_STATUS_PLAYING) {
-                                IntentUtils.sendLocalBroadcast(MainActivity.this, PlaybackService.ACTION_PAUSE_PLAY_CURRENT_EPISODE);
-                            }
-                        }
-                        MHDefaultFeedLoader.addUnwantedFeedToList(MainActivity.this, feed.getIdentifyingValue());
-                        remover.executeAsync();
-                    }
-                };
-                conDialog.createNewDialog().show();
-                return true;
-            default:
-                return super.onContextItemSelected(item);
-        }
-    }
 
     @Override
     public void onBackPressed() {
