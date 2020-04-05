@@ -3,6 +3,8 @@ package de.danoeh.antennapod.discovery;
 import android.content.Context;
 import android.util.Log;
 import android.util.Pair;
+
+import de.danoeh.antennapod.making_history.MHDiscoverListSearcher;
 import io.reactivex.Single;
 import io.reactivex.SingleOnSubscribe;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -24,6 +26,9 @@ public class CombinedSearcher implements PodcastSearcher {
     public CombinedSearcher(Context context) {
         addProvider(new FyydPodcastSearcher(), 1.f);
         addProvider(new ItunesPodcastSearcher(context), 1.f);
+
+        // Add our searcher with increased priority.
+        addProvider(new MHDiscoverListSearcher(context), 2.f);
         //addProvider(new GpodnetPodcastSearcher(), 0.6f);
     }
 
