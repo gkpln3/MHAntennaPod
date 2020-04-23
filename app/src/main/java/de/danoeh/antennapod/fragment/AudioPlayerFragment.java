@@ -266,6 +266,7 @@ public class AudioPlayerFragment extends Fragment implements
                 .subscribe(media -> updateUi((Playable) media),
                         error -> Log.e(TAG, Log.getStackTraceString(error)),
                         () -> updateUi(null));
+
     }
 
     private PlaybackController newPlaybackController() {
@@ -279,6 +280,11 @@ public class AudioPlayerFragment extends Fragment implements
             @Override
             public void onBufferStart() {
                 progressIndicator.setVisibility(View.VISIBLE);
+
+                // GUYK: MH - We want to show the player when the user starts an episode.
+                if (AudioPlayerFragment.this.getContext() != null) {
+                    AudioPlayerFragment.this.getContext().startActivity(new Intent(AudioPlayerFragment.this.getContext(), MainActivity.class).putExtra(MainActivity.EXTRA_OPEN_PLAYER, true));
+                }
             }
 
             @Override

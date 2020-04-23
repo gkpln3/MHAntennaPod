@@ -69,7 +69,7 @@ public class MHDefaultFeedLoader {
                     // Calculate the hash value of the current list to see if it has changed.
                     String opmlData = response.body().string();
                     int stringHash = opmlData.hashCode();
-                    SharedPreferences prefs = activity.getSharedPreferences(SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE);
+                    SharedPreferences prefs = activity.getSharedPreferences(SHARED_PREFERENCES_NAME, Context.MODE_MULTI_PROCESS);
                     if (prefs.getInt(OPML_HASH_PREF_NAME, 0) == stringHash)
                     {
                         // List has not changed, exit.
@@ -125,10 +125,10 @@ public class MHDefaultFeedLoader {
      */
     public static void addUnwantedFeedToList(Context context, String feedURL)
     {
-        SharedPreferences prefs = context.getSharedPreferences(SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE);
+        SharedPreferences prefs = context.getSharedPreferences(SHARED_PREFERENCES_NAME, Context.MODE_MULTI_PROCESS);
         Set<String> unwantedPodcasts = prefs.getStringSet(UNWANTED_FEEDS_LIST_PREF_NAME, new HashSet<String>());
         unwantedPodcasts.add(feedURL);
-        prefs.edit().putStringSet(UNWANTED_FEEDS_LIST_PREF_NAME, unwantedPodcasts).commit();
+        prefs.edit().putStringSet(UNWANTED_FEEDS_LIST_PREF_NAME, unwantedPodcasts).apply();
     }
 
     private static int[] toIntArray(List<Integer> list)  {

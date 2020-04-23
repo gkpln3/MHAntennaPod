@@ -701,8 +701,8 @@
   <string name="sort_duration_short_long">משך (קצר \u2192 ארוך)</string>
   <string name="sort_duration_long_short">משך (קצר \u2192 ארוך)</string>
   <!--Rating dialog-->
-  <string name="rating_title">היישומון אנטנה־פּוֹד נושא חן בעיניך?</string>
-  <string name="rating_message">מאוד נשמח לקבל דירוג על אנטנה־פּוֹד אם יש לך זמן לכך.</string>
+  <string name="rating_title">אוהבים את עושים היסטוריה?</string>
+  <string name="rating_message">מאוד נשמח לקבל דירוג בפלייסטור.</string>
   <string name="rating_never_label">לא תודה</string>
   <string name="rating_later_label">פעם אחרת</string>
   <string name="rating_now_label">בטח, נלך על זה!</string>
