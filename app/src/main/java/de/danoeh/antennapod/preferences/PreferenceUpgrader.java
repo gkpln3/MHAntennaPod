@@ -20,8 +20,12 @@ public class PreferenceUpgrader {
     public static void checkUpgrades(Context context) {
         prefs = PreferenceManager.getDefaultSharedPreferences(context);
         SharedPreferences upgraderPrefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-        int oldVersion = upgraderPrefs.getInt(PREF_CONFIGURED_VERSION, -1);
-        int newVersion = BuildConfig.VERSION_CODE;
+
+        // MH: Guyk - Ignore the MH part of the version code.
+        int oldVersion = upgraderPrefs.getInt(PREF_CONFIGURED_VERSION, -1) % 10000000;
+
+        // MH: Guyk - Ignore the MH part of the version code.
+        int newVersion = BuildConfig.VERSION_CODE % 10000000;
 
         if (oldVersion != newVersion) {
             AutoUpdateManager.restartUpdateAlarm();
