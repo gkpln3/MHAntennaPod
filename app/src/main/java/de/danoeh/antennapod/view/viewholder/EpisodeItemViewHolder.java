@@ -2,6 +2,7 @@ package de.danoeh.antennapod.view.viewholder;
 
 import android.os.Build;
 import android.text.Layout;
+import android.text.format.Formatter;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,9 +10,12 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+
 import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.joanzapata.iconify.Iconify;
+
 import de.danoeh.antennapod.R;
 import de.danoeh.antennapod.activity.MainActivity;
 import de.danoeh.antennapod.adapter.CoverLoader;
@@ -35,7 +39,7 @@ import de.danoeh.antennapod.view.CircularProgressBar;
 public class EpisodeItemViewHolder extends RecyclerView.ViewHolder {
     private static final String TAG = "EpisodeItemViewHolder";
 
-    private final View container;
+    public final View container;
     public final ImageView dragHandle;
     private final TextView placeholder;
     private final ImageView cover;
@@ -53,6 +57,7 @@ public class EpisodeItemViewHolder extends RecyclerView.ViewHolder {
     public final ImageView secondaryActionIcon;
     private final CircularProgressBar secondaryActionProgress;
     private final TextView separatorIcons;
+    private final View leftPadding;
     public final CardView coverHolder;
 
     private final MainActivity activity;
@@ -83,6 +88,7 @@ public class EpisodeItemViewHolder extends RecyclerView.ViewHolder {
         secondaryActionButton = itemView.findViewById(R.id.secondaryActionButton);
         secondaryActionIcon = itemView.findViewById(R.id.secondaryActionIcon);
         coverHolder = itemView.findViewById(R.id.coverHolder);
+        leftPadding = itemView.findViewById(R.id.left_padding);
         itemView.setTag(this);
     }
 
@@ -90,7 +96,9 @@ public class EpisodeItemViewHolder extends RecyclerView.ViewHolder {
         this.item = item;
         placeholder.setText(item.getFeed().getTitle());
         title.setText(item.getTitle());
+        leftPadding.setContentDescription(item.getTitle());
         pubDate.setText(DateUtils.formatAbbrev(activity, item.getPubDate()));
+        pubDate.setContentDescription(DateUtils.formatForAccessibility(activity, item.getPubDate()));
         isNew.setVisibility(item.isNew() ? View.VISIBLE : View.GONE);
         isFavorite.setVisibility(item.isTagged(FeedItem.TAG_FAVORITE) ? View.VISIBLE : View.GONE);
         isInQueue.setVisibility(item.isTagged(FeedItem.TAG_QUEUE) ? View.VISIBLE : View.GONE);
@@ -124,6 +132,8 @@ public class EpisodeItemViewHolder extends RecyclerView.ViewHolder {
         isVideo.setVisibility(media.getMediaType() == MediaType.VIDEO ? View.VISIBLE : View.GONE);
         duration.setVisibility(media.getDuration() > 0 ? View.VISIBLE : View.GONE);
         duration.setText(Converter.getDurationStringLong(media.getDuration()));
+        duration.setContentDescription(activity.getString(R.string.chapter_duration,
+                Converter.getDurationStringLocalized(activity, media.getDuration())));
 
         if (media.isCurrentlyPlaying()) {
             container.setBackgroundColor(ThemeUtils.getColorFromAttr(activity, R.attr.currently_playing_background));
@@ -145,6 +155,8 @@ public class EpisodeItemViewHolder extends RecyclerView.ViewHolder {
             int progress = (int) (100.0 * media.getPosition() / media.getDuration());
             progressBar.setProgress(progress);
             position.setText(Converter.getDurationStringLong(media.getPosition()));
+            position.setContentDescription(activity.getString(R.string.position,
+                    Converter.getDurationStringLocalized(activity, media.getPosition())));
             progressBar.setVisibility(View.VISIBLE);
             position.setVisibility(View.VISIBLE);
         } else {
@@ -153,14 +165,14 @@ public class EpisodeItemViewHolder extends RecyclerView.ViewHolder {
         }
 
         if (media.getSize() > 0) {
-            size.setText(Converter.byteToString(media.getSize()));
+            size.setText(Formatter.formatShortFileSize(activity, media.getSize()));
         } else if (NetworkUtils.isEpisodeHeadDownloadAllowed() && !media.checkedOnSizeButUnknown()) {
             size.setText("{fa-spinner}");
             Iconify.addIcons(size);
             NetworkUtils.getFeedMediaSizeObservable(media).subscribe(
                     sizeValue -> {
                         if (sizeValue > 0) {
-                            size.setText(Converter.byteToString(sizeValue));
+                            size.setText(Formatter.formatShortFileSize(activity, sizeValue));
                         } else {
                             size.setText("");
                         }
@@ -185,6 +197,7 @@ public class EpisodeItemViewHolder extends RecyclerView.ViewHolder {
         progressBar.setProgress((int) (100.0 * event.getPosition() / event.getDuration()));
         position.setText(Converter.getDurationStringLong(event.getPosition()));
         duration.setText(Converter.getDurationStringLong(event.getDuration()));
+        duration.setVisibility(View.VISIBLE); // Even if the duration was previously unknown, it is now known
     }
 
     /**

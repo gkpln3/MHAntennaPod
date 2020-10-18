@@ -10,6 +10,7 @@ import android.content.IntentFilter;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -17,6 +18,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
+import de.danoeh.antennapod.core.R;
 import de.danoeh.antennapod.core.sync.SyncService;
 import org.apache.commons.io.FileUtils;
 import org.greenrobot.eventbus.EventBus;
@@ -86,8 +88,6 @@ public class DownloadService extends Service {
     public static final String EXTRA_REQUESTS = "downloadRequests";
 
     public static final String EXTRA_CLEANUP_MEDIA = "cleanupMedia";
-
-    public static final int NOTIFICATION_ID = 2;
 
     /**
      * Contains all completed downloads that have not been included in the report yet.
@@ -165,7 +165,7 @@ public class DownloadService extends Service {
         if (intent != null && intent.getParcelableArrayListExtra(EXTRA_REQUESTS) != null) {
             Notification notification = notificationManager.updateNotifications(
                     requester.getNumberOfDownloads(), downloads);
-            startForeground(NOTIFICATION_ID, notification);
+            startForeground(R.id.notification_downloading, notification);
             syncExecutor.execute(() -> onDownloadQueued(intent));
         } else if (numberOfDownloads.get() == 0) {
             stopSelf();
@@ -179,7 +179,7 @@ public class DownloadService extends Service {
     public void onCreate() {
         Log.d(TAG, "Service started");
         isRunning = true;
-        handler = new Handler();
+        handler = new Handler(Looper.getMainLooper());
         notificationManager = new DownloadServiceNotification(this);
 
         IntentFilter cancelDownloadReceiverFilter = new IntentFilter();
@@ -191,7 +191,7 @@ public class DownloadService extends Service {
 
         Notification notification = notificationManager.updateNotifications(
                 requester.getNumberOfDownloads(), downloads);
-        startForeground(NOTIFICATION_ID, notification);
+        startForeground(R.id.notification_downloading, notification);
     }
 
     @Override
@@ -229,7 +229,7 @@ public class DownloadService extends Service {
 
         stopForeground(true);
         NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-        nm.cancel(NOTIFICATION_ID);
+        nm.cancel(R.id.notification_downloading);
 
         // if this was the initial gpodder sync, i.e. we just synced the feeds successfully,
         // it is now time to sync the episode actions
@@ -480,12 +480,9 @@ public class DownloadService extends Service {
             }
             handler.post(() -> {
                 downloads.add(downloader);
+                downloadExecutor.submit(downloader);
                 postDownloaders();
             });
-            // Needs to be done after postDownloaders() because otherwise,
-            // it might take long before the progress bar circle starts spinning
-            ClientConfig.installSslProvider(this);
-            handler.post(() -> downloadExecutor.submit(downloader));
         }
         handler.post(this::queryDownloads);
     }
@@ -566,7 +563,7 @@ public class DownloadService extends Service {
             setupNotificationUpdater();
             Notification notification = notificationManager.updateNotifications(
                     requester.getNumberOfDownloads(), downloads);
-            startForeground(NOTIFICATION_ID, notification);
+            startForeground(R.id.notification_downloading, notification);
         }
     }
 
@@ -642,7 +639,7 @@ public class DownloadService extends Service {
             Notification n = notificationManager.updateNotifications(requester.getNumberOfDownloads(), downloads);
             if (n != null) {
                 NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-                nm.notify(NOTIFICATION_ID, n);
+                nm.notify(R.id.notification_downloading, n);
             }
         }
     }

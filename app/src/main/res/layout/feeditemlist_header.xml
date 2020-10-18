@@ -5,6 +5,8 @@
         xmlns:app="http://schemas.android.com/apk/res-auto"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:id="@+id/headerContainer"
+        android:paddingHorizontal="@dimen/additional_horizontal_spacing"
         android:orientation="vertical">
 
     <LinearLayout
@@ -21,10 +23,9 @@
                 android:layout_height="100dp"
                 android:layout_marginRight="16dp"
                 android:layout_marginEnd="16dp"
-                android:contentDescription="@string/cover_label"
-                tools:src="@drawable/ic_antenna"
+                android:importantForAccessibility="no"
+                tools:src="@tools:sample/avatars"
                 tools:background="@android:color/holo_green_dark"/>
-
 
         <LinearLayout
                 android:layout_width="match_parent"
@@ -98,7 +99,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:padding="2dp"
-            android:background="?attr/colorPrimary"
+            android:background="?android:attr/windowBackground"
             android:visibility="gone"
             android:gravity="center"
             tools:visibility="visible"

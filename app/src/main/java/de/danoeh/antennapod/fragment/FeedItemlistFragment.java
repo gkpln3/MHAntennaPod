@@ -2,8 +2,12 @@ package de.danoeh.antennapod.fragment;
 
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.res.Configuration;
+import android.content.Intent;
 import android.graphics.LightingColorFilter;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -24,6 +28,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.google.android.material.appbar.AppBarLayout;
@@ -52,6 +58,7 @@ import de.danoeh.antennapod.core.glide.FastBlurTransformation;
 import de.danoeh.antennapod.core.service.download.DownloadService;
 import de.danoeh.antennapod.core.storage.DBReader;
 import de.danoeh.antennapod.core.storage.DBTasks;
+import de.danoeh.antennapod.core.storage.DBWriter;
 import de.danoeh.antennapod.core.storage.DownloadRequestException;
 import de.danoeh.antennapod.core.storage.DownloadRequester;
 import de.danoeh.antennapod.core.util.FeedItemPermutors;
@@ -60,6 +67,7 @@ import de.danoeh.antennapod.core.util.Optional;
 import de.danoeh.antennapod.core.util.ThemeUtils;
 import de.danoeh.antennapod.core.util.gui.MoreContentListFooterUtil;
 import de.danoeh.antennapod.dialog.EpisodesApplyActionFragment;
+import de.danoeh.antennapod.dialog.FilterDialog;
 import de.danoeh.antennapod.dialog.RenameFeedDialog;
 import de.danoeh.antennapod.making_history.MHDefaultFeedLoader;
 import de.danoeh.antennapod.menuhandler.FeedItemMenuHandler;
@@ -78,6 +86,7 @@ import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Displays a list of FeedItems.
@@ -99,6 +108,7 @@ public class FeedItemlistFragment extends Fragment implements AdapterView.OnItem
     private TextView txtvAuthor;
     private ImageButton butShowInfo;
     private ImageButton butShowSettings;
+    private View header;
     private Menu optionsMenu;
     private ToolbarIconTintManager iconTintManager;
 
@@ -156,6 +166,7 @@ public class FeedItemlistFragment extends Fragment implements AdapterView.OnItem
         butShowSettings = root.findViewById(R.id.butShowSettings);
         txtvInformation = root.findViewById(R.id.txtvInformation);
         txtvFailure = root.findViewById(R.id.txtvFailure);
+        header = root.findViewById(R.id.headerContainer);
         AppBarLayout appBar = root.findViewById(R.id.appBar);
         CollapsingToolbarLayout collapsingToolbar = root.findViewById(R.id.collapsing_toolbar);
 
@@ -199,6 +210,18 @@ public class FeedItemlistFragment extends Fragment implements AdapterView.OnItem
         });
 
         EventBus.getDefault().register(this);
+
+        SwipeRefreshLayout swipeRefreshLayout = root.findViewById(R.id.swipeRefresh);
+        swipeRefreshLayout.setOnRefreshListener(() -> {
+            try {
+                DBTasks.forceRefreshFeed(requireContext(), feed, true);
+            } catch (DownloadRequestException e) {
+                e.printStackTrace();
+            }
+            new Handler(Looper.getMainLooper()).postDelayed(() -> swipeRefreshLayout.setRefreshing(false),
+                    getResources().getInteger(R.integer.swipe_to_refresh_duration_in_ms));
+        });
+
         loadItems();
         return root;
     }
@@ -222,7 +245,7 @@ public class FeedItemlistFragment extends Fragment implements AdapterView.OnItem
     };
 
     @Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
         if (!isAdded()) {
             return;
         }
@@ -230,7 +253,11 @@ public class FeedItemlistFragment extends Fragment implements AdapterView.OnItem
         optionsMenu = menu;
         FeedMenuHandler.onCreateOptionsMenu(inflater, menu);
         iconTintManager.updateTint();
-        MenuItemUtils.setupSearchItem(menu, (MainActivity) getActivity(), feedID);
+        if (feed != null) {
+            MenuItemUtils.setupSearchItem(menu, (MainActivity) getActivity(), feedID, feed.getTitle());
+        } else {
+            MenuItemUtils.setupSearchItem(menu, (MainActivity) getActivity(), feedID, "");
+        }
         if (feed == null || feed.getLink() == null) {
             menu.findItem(R.id.share_link_item).setVisible(false);
             menu.findItem(R.id.visit_website_item).setVisible(false);
@@ -240,17 +267,30 @@ public class FeedItemlistFragment extends Fragment implements AdapterView.OnItem
     }
 
     @Override
-    public void onPrepareOptionsMenu(Menu menu) {
+    public void onPrepareOptionsMenu(@NonNull Menu menu) {
         if (feed != null) {
             FeedMenuHandler.onPrepareOptionsMenu(menu, feed);
         }
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        if (!super.onOptionsItemSelected(item)) {
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        int horizontalSpacing = (int) getResources().getDimension(R.dimen.additional_horizontal_spacing);
+        header.setPadding(horizontalSpacing, header.getPaddingTop(), horizontalSpacing, header.getPaddingBottom());
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        if (item.getItemId() == R.id.action_search) {
+            item.getActionView().post(() -> iconTintManager.updateTint());
+        }
+        if (super.onOptionsItemSelected(item)) {
+            return true;
+        } else {
             if (feed == null) {
-                Toast.makeText(getContext(), R.string.please_wait_for_data, Toast.LENGTH_LONG).show();
+                ((MainActivity) getActivity()).showSnackbarAbovePlayer(
+                        R.string.please_wait_for_data, Toast.LENGTH_LONG);
                 return true;
             }
             try {
@@ -299,8 +339,6 @@ public class FeedItemlistFragment extends Fragment implements AdapterView.OnItem
                 DownloadRequestErrorDialogCreator.newRequestErrorDialog(getActivity(), e.getMessage());
                 return true;
             }
-        } else {
-            return true;
         }
     }
 
@@ -324,7 +362,7 @@ public class FeedItemlistFragment extends Fragment implements AdapterView.OnItem
         activity.loadChildFragment(ItemPagerFragment.newInstance(ids, position));
     }
 
-    @Subscribe
+    @Subscribe(threadMode = ThreadMode.MAIN)
     public void onEvent(FeedEvent event) {
         Log.d(TAG, "onEvent() called with: " + "event = [" + event + "]");
         if (event.feedId == feedID) {
@@ -359,7 +397,7 @@ public class FeedItemlistFragment extends Fragment implements AdapterView.OnItem
         if (event.hasChangedFeedUpdateStatus(isUpdatingFeed)) {
             updateSyncProgressBarVisibility();
         }
-        if (adapter != null && update.mediaIds.length > 0) {
+        if (adapter != null && update.mediaIds.length > 0 && feed != null) {
             for (long mediaId : update.mediaIds) {
                 int pos = FeedItemUtil.indexOfItemWithMediaId(feed.getItems(), mediaId);
                 if (pos >= 0) {
@@ -399,14 +437,14 @@ public class FeedItemlistFragment extends Fragment implements AdapterView.OnItem
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onFeedListChanged(FeedListUpdateEvent event) {
-        if (event.contains(feed)) {
+        if (feed != null && event.contains(feed)) {
             updateUi();
         }
     }
 
     private void updateSyncProgressBarVisibility() {
         if (isUpdatingFeed != updateRefreshMenuItemChecker.isRefreshing()) {
-            getActivity().supportInvalidateOptionsMenu();
+            getActivity().invalidateOptionsMenu();
         }
         if (!DownloadRequester.getInstance().isDownloadingFeeds()) {
             nextPageLoader.getRoot().setVisibility(View.GONE);
@@ -426,9 +464,11 @@ public class FeedItemlistFragment extends Fragment implements AdapterView.OnItem
         }
         recyclerView.setVisibility(View.VISIBLE);
         progressBar.setVisibility(View.GONE);
-        adapter.updateItems(feed.getItems());
+        if (feed != null) {
+            adapter.updateItems(feed.getItems());
+        }
 
-        getActivity().supportInvalidateOptionsMenu();
+        getActivity().invalidateOptionsMenu();
         updateSyncProgressBarVisibility();
     }
 
@@ -453,8 +493,19 @@ public class FeedItemlistFragment extends Fragment implements AdapterView.OnItem
                     RelativeLayout.LayoutParams p = (RelativeLayout.LayoutParams) txtvInformation.getLayoutParams();
                     p.addRule(RelativeLayout.BELOW, R.id.txtvFailure);
                 }
-                txtvInformation.setText("{fa-info-circle} " + this.getString(R.string.filtered_label));
+                txtvInformation.setText("{md-info-outline} " + this.getString(R.string.filtered_label));
                 Iconify.addIcons(txtvInformation);
+                txtvInformation.setOnClickListener((l) -> {
+                    FilterDialog filterDialog = new FilterDialog(requireContext(), feed.getItemFilter()) {
+                        @Override
+                        protected void updateFilter(Set<String> filterValues) {
+                            feed.setItemFilter(filterValues.toArray(new String[0]));
+                            DBWriter.setFeedItemsFilter(feed.getId(), filterValues);
+                        }
+                    };
+
+                    filterDialog.openDialog();
+                });
                 txtvInformation.setVisibility(View.VISIBLE);
             } else {
                 txtvInformation.setVisibility(View.GONE);
@@ -480,6 +531,14 @@ public class FeedItemlistFragment extends Fragment implements AdapterView.OnItem
                 FeedSettingsFragment fragment = FeedSettingsFragment.newInstance(feed);
                 ((MainActivity) getActivity()).loadChildFragment(fragment, TransitionEffect.SLIDE);
             }
+        });
+        txtvFailure.setOnClickListener(v -> {
+            Intent intent = new Intent(getContext(), MainActivity.class);
+            intent.putExtra(MainActivity.EXTRA_FRAGMENT_TAG, DownloadsFragment.TAG);
+            Bundle args = new Bundle();
+            args.putInt(DownloadsFragment.ARG_SELECTED_TAB, DownloadsFragment.POS_LOG);
+            intent.putExtra(MainActivity.EXTRA_FRAGMENT_ARGS, args);
+            startActivity(intent);
         });
         headerCreated = true;
     }

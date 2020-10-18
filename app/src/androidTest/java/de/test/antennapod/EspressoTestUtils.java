@@ -4,7 +4,8 @@ import android.content.Context;
 import android.content.Intent;
 import androidx.annotation.IdRes;
 import androidx.annotation.StringRes;
-import androidx.test.InstrumentationRegistry;
+import androidx.preference.PreferenceManager;
+import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.espresso.PerformException;
 import androidx.test.espresso.UiController;
 import androidx.test.espresso.ViewAction;
@@ -16,6 +17,7 @@ import androidx.test.espresso.util.TreeIterables;
 import android.view.View;
 import de.danoeh.antennapod.R;
 import de.danoeh.antennapod.activity.MainActivity;
+import de.danoeh.antennapod.core.preferences.UserPreferences;
 import de.danoeh.antennapod.core.service.download.DownloadService;
 import de.danoeh.antennapod.core.service.playback.PlaybackService;
 import de.danoeh.antennapod.core.storage.PodDBAdapter;
@@ -114,35 +116,39 @@ public class EspressoTestUtils {
      * Clear all app databases
      */
     public static void clearPreferences() {
-        File root = InstrumentationRegistry.getTargetContext().getFilesDir().getParentFile();
+        File root = InstrumentationRegistry.getInstrumentation().getTargetContext().getFilesDir().getParentFile();
         String[] sharedPreferencesFileNames = new File(root, "shared_prefs").list();
         for (String fileName : sharedPreferencesFileNames) {
             System.out.println("Cleared database: " + fileName);
-            InstrumentationRegistry.getTargetContext().getSharedPreferences(
+            InstrumentationRegistry.getInstrumentation().getTargetContext().getSharedPreferences(
                     fileName.replace(".xml", ""), Context.MODE_PRIVATE).edit().clear().commit();
         }
-    }
 
-    public static void makeNotFirstRun() {
-        InstrumentationRegistry.getTargetContext().getSharedPreferences(MainActivity.PREF_NAME, Context.MODE_PRIVATE)
+        InstrumentationRegistry.getInstrumentation().getTargetContext()
+                .getSharedPreferences(MainActivity.PREF_NAME, Context.MODE_PRIVATE)
                 .edit()
                 .putBoolean(MainActivity.PREF_IS_FIRST_LAUNCH, false)
                 .commit();
 
-        RatingDialog.init(InstrumentationRegistry.getTargetContext());
+        PreferenceManager.getDefaultSharedPreferences(InstrumentationRegistry.getInstrumentation().getTargetContext())
+                .edit()
+                .putString(UserPreferences.PREF_UPDATE_INTERVAL, "0")
+                .commit();
+
+        RatingDialog.init(InstrumentationRegistry.getInstrumentation().getTargetContext());
         RatingDialog.saveRated();
     }
 
     public static void setLastNavFragment(String tag) {
-        InstrumentationRegistry.getTargetContext().getSharedPreferences(
-                NavDrawerFragment.PREF_NAME, Context.MODE_PRIVATE)
+        InstrumentationRegistry.getInstrumentation().getTargetContext()
+                .getSharedPreferences(NavDrawerFragment.PREF_NAME, Context.MODE_PRIVATE)
                 .edit()
                 .putString(NavDrawerFragment.PREF_LAST_FRAGMENT_TAG, tag)
                 .commit();
     }
 
     public static void clearDatabase() {
-        PodDBAdapter.init(InstrumentationRegistry.getTargetContext());
+        PodDBAdapter.init(InstrumentationRegistry.getInstrumentation().getTargetContext());
         PodDBAdapter.deleteDatabase();
         PodDBAdapter adapter = PodDBAdapter.getInstance();
         adapter.open();
@@ -167,7 +173,7 @@ public class EspressoTestUtils {
     }
 
     public static void tryKillPlaybackService() {
-        Context context = InstrumentationRegistry.getTargetContext();
+        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
         context.stopService(new Intent(context, PlaybackService.class));
         try {
             // Android has no reliable way to stop a service instantly.
@@ -178,11 +184,11 @@ public class EspressoTestUtils {
         } catch (ConditionTimeoutException e) {
             e.printStackTrace();
         }
-        androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().waitForIdleSync();
+        InstrumentationRegistry.getInstrumentation().waitForIdleSync();
     }
 
     public static void tryKillDownloadService() {
-        Context context = InstrumentationRegistry.getTargetContext();
+        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
         context.stopService(new Intent(context, DownloadService.class));
         try {
             // Android has no reliable way to stop a service instantly.
@@ -193,7 +199,7 @@ public class EspressoTestUtils {
         } catch (ConditionTimeoutException e) {
             e.printStackTrace();
         }
-        androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().waitForIdleSync();
+        InstrumentationRegistry.getInstrumentation().waitForIdleSync();
     }
 
     public static Matcher<View> actionBarOverflow() {

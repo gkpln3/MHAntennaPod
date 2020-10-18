@@ -3,6 +3,10 @@ package de.danoeh.antennapod.dialog;
 import android.content.Context;
 import android.widget.TextView;
 import androidx.appcompat.app.AlertDialog;
+
+import java.text.NumberFormat;
+import java.util.Locale;
+
 import de.danoeh.antennapod.R;
 import de.danoeh.antennapod.core.preferences.UserPreferences;
 
@@ -26,7 +30,8 @@ public class SkipPreferenceDialog {
             if (skipSecs == values[i]) {
                 checked = i;
             }
-            choices[i] = values[i] + " " + context.getString(R.string.time_seconds);
+            choices[i] = String.format(Locale.getDefault(),
+                    "%d %s", values[i], context.getString(R.string.time_seconds));
         }
 
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
@@ -45,7 +50,7 @@ public class SkipPreferenceDialog {
                     UserPreferences.setRewindSecs(seconds);
                 }
                 if (textView != null) {
-                    textView.setText(String.valueOf(seconds));
+                    textView.setText(NumberFormat.getInstance().format(seconds));
                 }
             }
         });

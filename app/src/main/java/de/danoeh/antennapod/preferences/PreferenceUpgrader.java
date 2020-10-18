@@ -2,14 +2,14 @@ package de.danoeh.antennapod.preferences;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
+import androidx.preference.PreferenceManager;
 
 import de.danoeh.antennapod.BuildConfig;
+import de.danoeh.antennapod.error.CrashReportWriter;
 import de.danoeh.antennapod.R;
 import de.danoeh.antennapod.core.preferences.UserPreferences;
 import de.danoeh.antennapod.core.preferences.UserPreferences.EnqueueLocation;
 import de.danoeh.antennapod.core.util.download.AutoUpdateManager;
-import de.danoeh.antennapod.core.util.gui.NotificationUtils;
 
 public class PreferenceUpgrader {
     private static final String PREF_CONFIGURED_VERSION = "version_code";
@@ -28,7 +28,8 @@ public class PreferenceUpgrader {
         int newVersion = BuildConfig.VERSION_CODE % 10000000;
 
         if (oldVersion != newVersion) {
-            AutoUpdateManager.restartUpdateAlarm();
+            AutoUpdateManager.restartUpdateAlarm(context);
+            CrashReportWriter.getFile().delete();
 
             upgrade(oldVersion);
             upgraderPrefs.edit().putInt(PREF_CONFIGURED_VERSION, newVersion).apply();
@@ -79,7 +80,7 @@ public class PreferenceUpgrader {
             }
 
             UserPreferences.setQueueLocked(false);
-            prefs.edit().putBoolean(UserPreferences.PREF_STREAM_OVER_DOWNLOAD, false).apply();
+            UserPreferences.setStreamOverDownload(false);
 
             if (!prefs.contains(UserPreferences.PREF_ENQUEUE_LOCATION)) {
                 final String keyOldPrefEnqueueFront = "prefQueueAddToFront";

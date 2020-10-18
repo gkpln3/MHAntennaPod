@@ -21,6 +21,7 @@ import de.danoeh.antennapod.core.feed.MediaType;
 import de.danoeh.antennapod.core.feed.util.ImageResourceUtils;
 import de.danoeh.antennapod.core.glide.ApGlideSettings;
 import de.danoeh.antennapod.core.service.playback.PlaybackService;
+import de.danoeh.antennapod.core.service.playback.PlayerStatus;
 import de.danoeh.antennapod.core.util.playback.Playable;
 import de.danoeh.antennapod.core.util.playback.PlaybackController;
 import io.reactivex.Maybe;
@@ -77,11 +78,18 @@ public class ExternalPlayerFragment extends Fragment {
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        controller = setupPlaybackController();
         butPlay.setOnClickListener(v -> {
             if (controller != null) {
-                controller.playPause();
+                if (controller.getMedia().getMediaType() == MediaType.VIDEO
+                        && controller.getStatus() != PlayerStatus.PLAYING) {
+                    controller.playPause();
+                    getContext().startActivity(PlaybackService
+                            .getPlayerActivityIntent(getContext(), controller.getMedia()));
+                } else {
+                    controller.playPause();
+                }
             }
+
         });
         loadMediaInfo();
     }
@@ -201,17 +209,12 @@ public class ExternalPlayerFragment extends Fragment {
                 .into(imgvCover);
 
         if (controller != null && controller.isPlayingVideoLocally()) {
-            butPlay.setVisibility(View.GONE);
             ((MainActivity) getActivity()).getBottomSheet().setLocked(true);
             ((MainActivity) getActivity()).getBottomSheet().setState(BottomSheetBehavior.STATE_COLLAPSED);
         } else {
             butPlay.setVisibility(View.VISIBLE);
             ((MainActivity) getActivity()).getBottomSheet().setLocked(false);
         }
-    }
-
-    public PlaybackController getPlaybackControllerTestingOnly() {
-        return controller;
     }
 
     private void onPositionObserverUpdate() {

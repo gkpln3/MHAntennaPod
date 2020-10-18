@@ -12,13 +12,21 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
+
 import de.danoeh.antennapod.R;
 import de.danoeh.antennapod.activity.MainActivity;
 import de.danoeh.antennapod.activity.OnlineFeedViewActivity;
 import de.danoeh.antennapod.activity.OpmlImportActivity;
+import de.danoeh.antennapod.discovery.CombinedSearcher;
+import de.danoeh.antennapod.discovery.FyydPodcastSearcher;
+import de.danoeh.antennapod.discovery.ItunesPodcastSearcher;
+import de.danoeh.antennapod.discovery.PodcastIndexPodcastSearcher;
 import de.danoeh.antennapod.fragment.gpodnet.GpodnetMainFragment;
 
 /**
@@ -33,18 +41,23 @@ public class AddFeedFragment extends Fragment {
     private MainActivity activity;
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    @Nullable
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
         super.onCreateView(inflater, container, savedInstanceState);
         View root = inflater.inflate(R.layout.addfeed, container, false);
         activity = (MainActivity) getActivity();
         ((AppCompatActivity) getActivity()).setSupportActionBar(root.findViewById(R.id.toolbar));
 
         root.findViewById(R.id.btn_search_itunes).setOnClickListener(v
-                -> activity.loadChildFragment(new ItunesSearchFragment()));
+                -> activity.loadChildFragment(OnlineSearchFragment.newInstance(ItunesPodcastSearcher.class)));
         root.findViewById(R.id.btn_search_fyyd).setOnClickListener(v
-                -> activity.loadChildFragment(new FyydSearchFragment()));
+                -> activity.loadChildFragment(OnlineSearchFragment.newInstance(FyydPodcastSearcher.class)));
         root.findViewById(R.id.btn_search_gpodder).setOnClickListener(v
                 -> activity.loadChildFragment(new GpodnetMainFragment()));
+        root.findViewById(R.id.btn_search_podcastindex).setOnClickListener(v
+                -> activity.loadChildFragment(OnlineSearchFragment.newInstance(PodcastIndexPodcastSearcher.class)));
 
         combinedFeedSearchBox = root.findViewById(R.id.combinedFeedSearchBox);
         combinedFeedSearchBox.setOnEditorActionListener((v, actionId, event) -> {
@@ -89,23 +102,17 @@ public class AddFeedFragment extends Fragment {
     private void addUrl(String url) {
         Intent intent = new Intent(getActivity(), OnlineFeedViewActivity.class);
         intent.putExtra(OnlineFeedViewActivity.ARG_FEEDURL, url);
-        intent.putExtra(OnlineFeedViewActivity.ARG_TITLE, getString(R.string.add_feed_label));
         startActivity(intent);
     }
 
     private void performSearch() {
         String query = combinedFeedSearchBox.getText().toString();
 
-        if (query.startsWith("http")) {
+        if (query.matches("http[s]?://.*")) {
             addUrl(query);
             return;
         }
-
-        Bundle bundle = new Bundle();
-        bundle.putString(CombinedSearchFragment.ARGUMENT_QUERY, query);
-        CombinedSearchFragment fragment = new CombinedSearchFragment();
-        fragment.setArguments(bundle);
-        activity.loadChildFragment(fragment);
+        activity.loadChildFragment(OnlineSearchFragment.newInstance(CombinedSearcher.class, query));
     }
 
     @Override

@@ -7,29 +7,30 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.view.ViewCompat;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentStatePagerAdapter;
-import androidx.viewpager.widget.ViewPager;
+import androidx.viewpager2.adapter.FragmentStateAdapter;
+import androidx.viewpager2.widget.ViewPager2;
+
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
+
 import de.danoeh.antennapod.R;
-import de.danoeh.antennapod.activity.CastEnabledActivity;
 import de.danoeh.antennapod.activity.MainActivity;
 import de.danoeh.antennapod.core.event.FeedItemEvent;
 import de.danoeh.antennapod.core.feed.FeedItem;
 import de.danoeh.antennapod.core.storage.DBReader;
-import de.danoeh.antennapod.core.util.Flavors;
 import de.danoeh.antennapod.menuhandler.FeedItemMenuHandler;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
-import org.greenrobot.eventbus.EventBus;
-import org.greenrobot.eventbus.Subscribe;
-import org.greenrobot.eventbus.ThreadMode;
 
 /**
  * Displays information about a list of FeedItems.
@@ -37,11 +38,13 @@ import org.greenrobot.eventbus.ThreadMode;
 public class ItemPagerFragment extends Fragment {
     private static final String ARG_FEEDITEMS = "feeditems";
     private static final String ARG_FEEDITEM_POS = "feeditem_pos";
+    private static final String KEY_PAGER_ID = "pager_id";
+    private ViewPager2 pager;
 
     /**
      * Creates a new instance of an ItemPagerFragment.
      *
-     * @param feeditems The IDs of the FeedItems that belong to the same list
+     * @param feeditems   The IDs of the FeedItems that belong to the same list
      * @param feedItemPos The position of the FeedItem that is currently shown
      * @return The ItemFragment instance
      */
@@ -76,35 +79,36 @@ public class ItemPagerFragment extends Fragment {
         feedItems = getArguments().getLongArray(ARG_FEEDITEMS);
         int feedItemPos = getArguments().getInt(ARG_FEEDITEM_POS);
 
-        ViewPager pager = layout.findViewById(R.id.pager);
+        pager = layout.findViewById(R.id.pager);
         // FragmentStatePagerAdapter documentation:
         // > When using FragmentStatePagerAdapter the host ViewPager must have a valid ID set.
         // When opening multiple ItemPagerFragments by clicking "item" -> "visit podcast" -> "item" -> etc,
         // the ID is no longer unique and FragmentStatePagerAdapter does not display any pages.
         int newId = ViewCompat.generateViewId();
+        if (savedInstanceState != null && savedInstanceState.getInt(KEY_PAGER_ID, 0) != 0) {
+            // Restore state by using the same ID as before. ID collisions are prevented in MainActivity.
+            newId = savedInstanceState.getInt(KEY_PAGER_ID, 0);
+        }
         pager.setId(newId);
-        pager.setAdapter(new ItemPagerAdapter());
-        pager.setCurrentItem(feedItemPos);
+        pager.setAdapter(new ItemPagerAdapter(this));
+        pager.setCurrentItem(feedItemPos, false);
+        pager.setOffscreenPageLimit(1);
         loadItem(feedItems[feedItemPos]);
-        pager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
-            @Override
-            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-
-            }
-
+        pager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
             @Override
             public void onPageSelected(int position) {
                 loadItem(feedItems[position]);
-            }
-
-            @Override
-            public void onPageScrollStateChanged(int state) {
-
             }
         });
 
         EventBus.getDefault().register(this);
         return layout;
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt(KEY_PAGER_ID, pager.getId());
     }
 
     @Override
@@ -148,13 +152,11 @@ public class ItemPagerFragment extends Fragment {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem menuItem) {
-        switch (menuItem.getItemId()) {
-            case R.id.open_podcast:
-                openPodcast();
-                return true;
-            default:
-                return FeedItemMenuHandler.onMenuItemClicked(this, menuItem.getItemId(), item);
+        if (menuItem.getItemId() == R.id.open_podcast) {
+            openPodcast();
+            return true;
         }
+        return FeedItemMenuHandler.onMenuItemClicked(this, menuItem.getItemId(), item);
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -173,20 +175,20 @@ public class ItemPagerFragment extends Fragment {
         ((MainActivity) getActivity()).loadChildFragment(fragment);
     }
 
-    private class ItemPagerAdapter extends FragmentStatePagerAdapter {
+    private class ItemPagerAdapter extends FragmentStateAdapter {
 
-        ItemPagerAdapter() {
-            super(getFragmentManager(), BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT);
+        ItemPagerAdapter(@NonNull Fragment fragment) {
+            super(fragment);
         }
 
         @NonNull
         @Override
-        public Fragment getItem(int position) {
+        public Fragment createFragment(int position) {
             return ItemFragment.newInstance(feedItems[position]);
         }
 
         @Override
-        public int getCount() {
+        public int getItemCount() {
             return feedItems.length;
         }
     }

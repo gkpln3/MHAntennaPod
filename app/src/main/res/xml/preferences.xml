@@ -44,13 +44,15 @@
             android:title="@string/statistics_label"
             android:icon="?attr/statistics" />
 
-    <PreferenceCategory android:title="@string/project_pref">
+    <PreferenceCategory
+            android:key="project"
+            android:title="@string/project_pref">
         <Preference
             android:key="prefFaq"
             android:title="@string/pref_faq"
             android:icon="?attr/ic_questionmark" />
         <Preference
-            android:key="prefViewMailingList"
+            android:key="prefViewForum"
             android:title="@string/visit_user_forum"
             android:icon="?attr/ic_chat" />
         <Preference

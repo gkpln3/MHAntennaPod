@@ -8,7 +8,6 @@ import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.DefaultLoadControl;
 import com.google.android.exoplayer2.DefaultRenderersFactory;
 import com.google.android.exoplayer2.ExoPlaybackException;
-import com.google.android.exoplayer2.ExoPlayerFactory;
 import com.google.android.exoplayer2.Format;
 import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.Player;
@@ -29,7 +28,7 @@ import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource;
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory;
-import com.google.android.exoplayer2.util.Util;
+import de.danoeh.antennapod.core.ClientConfig;
 import de.danoeh.antennapod.core.preferences.UserPreferences;
 import de.danoeh.antennapod.core.util.playback.IPlayer;
 import io.reactivex.Observable;
@@ -76,9 +75,11 @@ public class ExoPlayerWrapper implements IPlayer {
                 DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_MS,
                 DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS);
         loadControl.setBackBuffer(UserPreferences.getRewindSecs() * 1000 + 500, true);
-        trackSelector = new DefaultTrackSelector();
-        exoPlayer = ExoPlayerFactory.newSimpleInstance(context, new DefaultRenderersFactory(context),
-                trackSelector, loadControl.createDefaultLoadControl());
+        trackSelector = new DefaultTrackSelector(context);
+        exoPlayer = new SimpleExoPlayer.Builder(context, new DefaultRenderersFactory(context))
+                .setTrackSelector(trackSelector)
+                .setLoadControl(loadControl.createDefaultLoadControl())
+                .build();
         exoPlayer.setSeekParameters(SeekParameters.EXACT);
         exoPlayer.addListener(new Player.EventListener() {
             @Override
@@ -187,7 +188,7 @@ public class ExoPlayerWrapper implements IPlayer {
     public void setDataSource(String s) throws IllegalArgumentException, IllegalStateException {
         Log.d(TAG, "setDataSource: " + s);
         DefaultHttpDataSourceFactory httpDataSourceFactory = new DefaultHttpDataSourceFactory(
-                Util.getUserAgent(context, context.getPackageName()), null,
+                ClientConfig.USER_AGENT, null,
                 DefaultHttpDataSource.DEFAULT_CONNECT_TIMEOUT_MILLIS,
                 DefaultHttpDataSource.DEFAULT_READ_TIMEOUT_MILLIS,
                 true);

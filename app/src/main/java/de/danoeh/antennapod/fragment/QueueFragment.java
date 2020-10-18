@@ -58,6 +58,7 @@ import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.List;
+import java.util.Locale;
 
 import static de.danoeh.antennapod.dialog.EpisodesApplyActionFragment.ACTION_DELETE;
 import static de.danoeh.antennapod.dialog.EpisodesApplyActionFragment.ACTION_DOWNLOAD;
@@ -134,6 +135,7 @@ public class QueueFragment extends Fragment {
                 recyclerAdapter.notifyItemInserted(event.position);
                 break;
             case SET_QUEUE:
+            case SORTED: //Deliberate fall-through
                 queue = event.items;
                 recyclerAdapter.notifyDataSetChanged();
                 break;
@@ -145,10 +147,6 @@ public class QueueFragment extends Fragment {
                 break;
             case CLEARED:
                 queue.clear();
-                recyclerAdapter.notifyDataSetChanged();
-                break;
-            case SORTED:
-                queue = event.items;
                 recyclerAdapter.notifyDataSetChanged();
                 break;
             case MOVED:
@@ -214,7 +212,7 @@ public class QueueFragment extends Fragment {
     public void onPlayerStatusChanged(PlayerStatusEvent event) {
         loadItems(false);
         if (isUpdatingFeeds != updateRefreshMenuItemChecker.isRefreshing()) {
-            getActivity().supportInvalidateOptionsMenu();
+            getActivity().invalidateOptionsMenu();
         }
     }
 
@@ -223,7 +221,7 @@ public class QueueFragment extends Fragment {
         // Sent when playback position is reset
         loadItems(false);
         if (isUpdatingFeeds != updateRefreshMenuItemChecker.isRefreshing()) {
-            getActivity().supportInvalidateOptionsMenu();
+            getActivity().invalidateOptionsMenu();
         }
     }
 
@@ -248,7 +246,7 @@ public class QueueFragment extends Fragment {
         super.onCreateOptionsMenu(menu, inflater);
         if (queue != null) {
             inflater.inflate(R.menu.queue, menu);
-            MenuItemUtils.setupSearchItem(menu, (MainActivity) getActivity(), 0);
+            MenuItemUtils.setupSearchItem(menu, (MainActivity) getActivity(), 0, "");
             MenuItemUtils.refreshLockItem(getActivity(), menu);
 
             // Show Lock Item only if queue is sorted manually
@@ -337,11 +335,9 @@ public class QueueFragment extends Fragment {
                     if (keepSortedNew) {
                         SortOrder sortOrder = UserPreferences.getQueueKeepSortedOrder();
                         DBWriter.reorderQueue(sortOrder, true);
-                        if (recyclerAdapter != null) {
-                            recyclerAdapter.setLocked(true);
-                        }
-                    } else if (recyclerAdapter != null) {
-                        recyclerAdapter.setLocked(UserPreferences.isQueueLocked());
+                    }
+                    if (recyclerAdapter != null) {
+                        recyclerAdapter.updateDragDropEnabled();
                     }
                     getActivity().invalidateOptionsMenu();
                     return true;
@@ -382,16 +378,16 @@ public class QueueFragment extends Fragment {
 
     private void setQueueLocked(boolean locked) {
         UserPreferences.setQueueLocked(locked);
-        getActivity().supportInvalidateOptionsMenu();
+        getActivity().invalidateOptionsMenu();
         if (recyclerAdapter != null) {
-            recyclerAdapter.setLocked(locked);
+            recyclerAdapter.updateDragDropEnabled();
         }
-        if (locked) {
-            Snackbar.make(getActivity().findViewById(android.R.id.content),
-                    R.string.queue_locked, Snackbar.LENGTH_SHORT).show();
-        } else {
-            Snackbar.make(getActivity().findViewById(android.R.id.content),
-                    R.string.queue_unlocked, Snackbar.LENGTH_SHORT).show();
+        if (queue.size() == 0) {
+            if (locked) {
+                ((MainActivity) getActivity()).showSnackbarAbovePlayer(R.string.queue_locked, Snackbar.LENGTH_SHORT);
+            } else {
+                ((MainActivity) getActivity()).showSnackbarAbovePlayer(R.string.queue_unlocked, Snackbar.LENGTH_SHORT);
+            }
         }
     }
 
@@ -496,16 +492,16 @@ public class QueueFragment extends Fragment {
                     final boolean isRead = item.isPlayed();
                     DBWriter.markItemPlayed(FeedItem.PLAYED, false, item.getId());
                     DBWriter.removeQueueItem(getActivity(), true, item);
-                    Snackbar snackbar = Snackbar.make(root, getString(item.hasMedia()
-                            ? R.string.marked_as_read_label : R.string.marked_as_read_no_media_label),
-                            Snackbar.LENGTH_LONG);
-                    snackbar.setAction(getString(R.string.undo), v -> {
-                        DBWriter.addQueueItemAt(getActivity(), item.getId(), position, false);
-                        if(!isRead) {
-                            DBWriter.markItemPlayed(FeedItem.UNPLAYED, item.getId());
-                        }
-                    });
-                    snackbar.show();
+
+                    ((MainActivity) getActivity()).showSnackbarAbovePlayer(
+                            item.hasMedia() ? R.string.marked_as_read_label : R.string.marked_as_read_no_media_label,
+                            Snackbar.LENGTH_LONG)
+                            .setAction(getString(R.string.undo), v -> {
+                                DBWriter.addQueueItemAt(getActivity(), item.getId(), position, false);
+                                if (!isRead) {
+                                    DBWriter.markItemPlayed(FeedItem.UNPLAYED, item.getId());
+                                }
+                            });
                 }
 
                 @Override
@@ -572,13 +568,14 @@ public class QueueFragment extends Fragment {
 
         // we need to refresh the options menu because it sometimes
         // needs data that may have just been loaded.
-        getActivity().supportInvalidateOptionsMenu();
+        getActivity().invalidateOptionsMenu();
 
         refreshInfoBar();
     }
 
     private void refreshInfoBar() {
-        String info = queue.size() + getString(R.string.episodes_suffix);
+        String info = String.format(Locale.getDefault(), "%d%s",
+                queue.size(), getString(R.string.episodes_suffix));
         if (queue.size() > 0) {
             long timeLeft = 0;
             for (FeedItem item : queue) {

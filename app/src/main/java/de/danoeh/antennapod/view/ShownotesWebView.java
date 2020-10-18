@@ -16,6 +16,7 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import androidx.core.util.Consumer;
+import androidx.core.view.ViewCompat;
 import com.google.android.material.snackbar.Snackbar;
 import de.danoeh.antennapod.R;
 import de.danoeh.antennapod.core.util.Converter;
@@ -67,7 +68,7 @@ public class ShownotesWebView extends WebView implements View.OnLongClickListene
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
                 if (Timeline.isTimecodeLink(url) && timecodeSelectedListener != null) {
-                    timecodeSelectedListener.accept(Timeline.getTimecodeLinkTime(selectedUrl));
+                    timecodeSelectedListener.accept(Timeline.getTimecodeLinkTime(url));
                 } else {
                     IntentUtils.openInBrowser(getContext(), url);
                 }
@@ -115,7 +116,9 @@ public class ShownotesWebView extends WebView implements View.OnLongClickListene
                 android.content.ClipboardManager cm = (android.content.ClipboardManager) getContext()
                         .getSystemService(Context.CLIPBOARD_SERVICE);
                 cm.setPrimaryClip(clipData);
-                Snackbar.make(this, R.string.copied_url_msg, Snackbar.LENGTH_LONG).show();
+                Snackbar s = Snackbar.make(this, R.string.copied_url_msg, Snackbar.LENGTH_LONG);
+                ViewCompat.setElevation(s.getView(), 100);
+                s.show();
                 break;
             case R.id.go_to_position_item:
                 if (Timeline.isTimecodeLink(selectedUrl) && timecodeSelectedListener != null) {
@@ -161,5 +164,12 @@ public class ShownotesWebView extends WebView implements View.OnLongClickListene
 
     public void setPageFinishedListener(Runnable pageFinishedListener) {
         this.pageFinishedListener = pageFinishedListener;
+    }
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        setMeasuredDimension(Math.max(getMeasuredWidth(), getMinimumWidth()),
+                Math.max(getMeasuredHeight(), getMinimumHeight()));
     }
 }

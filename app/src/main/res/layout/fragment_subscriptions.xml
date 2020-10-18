@@ -14,17 +14,38 @@
             app:title="@string/subscriptions_label"
             android:id="@+id/toolbar"/>
 
-    <GridView
-            android:layout_below="@id/toolbar"
-            android:id="@+id/subscriptions_grid"
+    <TextView
+            android:id="@+id/feeds_filtered_message"
             android:layout_width="match_parent"
-            android:numColumns="3"
-            android:horizontalSpacing="2dp"
-            android:verticalSpacing="2dp"
-            android:layout_height="match_parent"
-            android:layout_gravity="center_horizontal"
-            android:paddingBottom="88dp"
-            android:clipToPadding="false"/>
+            android:layout_height="wrap_content"
+            android:layout_below="@id/toolbar"
+            android:background="?android:attr/selectableItemBackground"
+            android:gravity="start"
+            android:paddingStart="8dp"
+            android:paddingTop="4dp"
+            android:paddingEnd="8dp"
+            android:paddingBottom="8dp"
+            android:textColor="?android:attr/textColorSecondary"
+            android:textSize="@dimen/text_size_small" />
+
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefresh"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/feeds_filtered_message">
+
+        <GridView
+                android:id="@+id/subscriptions_grid"
+                android:layout_width="match_parent"
+                android:numColumns="3"
+                android:horizontalSpacing="2dp"
+                android:verticalSpacing="2dp"
+                android:layout_height="match_parent"
+                android:layout_gravity="center_horizontal"
+                android:paddingBottom="88dp"
+                android:clipToPadding="false"/>
+
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
     <ProgressBar
             android:id="@+id/progLoading"

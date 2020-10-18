@@ -2,10 +2,11 @@ package de.danoeh.antennapod.core.util.playback;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
+import androidx.preference.PreferenceManager;
 import android.util.Log;
 import android.view.SurfaceHolder;
 
+import de.danoeh.antennapod.core.ClientConfig;
 import org.antennapod.audio.MediaPlayer;
 
 import de.danoeh.antennapod.core.preferences.UserPreferences;
@@ -17,7 +18,7 @@ public class AudioPlayer extends MediaPlayer implements IPlayer {
     private static final String TAG = "AudioPlayer";
 
     public AudioPlayer(Context context) {
-        super(context);
+        super(context, true, ClientConfig.USER_AGENT);
         PreferenceManager.getDefaultSharedPreferences(context)
                 .registerOnSharedPreferenceChangeListener((sharedPreferences, key) -> {
                     if (key.equals(UserPreferences.PREF_MEDIA_PLAYER)) {

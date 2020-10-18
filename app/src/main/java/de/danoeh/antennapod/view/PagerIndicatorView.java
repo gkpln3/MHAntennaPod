@@ -1,15 +1,20 @@
 package de.danoeh.antennapod.view;
 
+import android.animation.ArgbEvaluator;
 import android.content.Context;
 import android.content.res.TypedArray;
-import android.database.DataSetObserver;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.view.View;
+
 import androidx.annotation.Nullable;
-import androidx.vectordrawable.graphics.drawable.ArgbEvaluator;
-import androidx.viewpager.widget.ViewPager;
+import androidx.core.text.TextUtilsCompat;
+import androidx.core.view.ViewCompat;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.viewpager2.widget.ViewPager2;
+
+import java.util.Locale;
 
 public class PagerIndicatorView extends View {
     private final Paint paint = new Paint();
@@ -18,6 +23,7 @@ public class PagerIndicatorView extends View {
     private int disabledPage = -1;
     private int circleColor = 0;
     private int circleColorHighlight = -1;
+    private boolean isLocaleRtl = false;
 
     public PagerIndicatorView(Context context) {
         super(context);
@@ -35,36 +41,48 @@ public class PagerIndicatorView extends View {
     }
 
     private void setup() {
+        isLocaleRtl = TextUtilsCompat.getLayoutDirectionFromLocale(Locale.getDefault())
+                == ViewCompat.LAYOUT_DIRECTION_RTL;
+
         paint.setAntiAlias(true);
         paint.setStyle(Paint.Style.FILL);
 
-        int[] colorAttrs = new int[] { android.R.attr.textColorSecondary };
+        int[] colorAttrs = new int[]{android.R.attr.textColorSecondary};
         TypedArray a = getContext().obtainStyledAttributes(colorAttrs);
         circleColorHighlight = a.getColor(0, 0xffffffff);
         circleColor = (Integer) new ArgbEvaluator().evaluate(0.8f, 0x00ffffff, circleColorHighlight);
         a.recycle();
     }
 
-    public void setViewPager(ViewPager pager) {
-        numPages = pager.getAdapter().getCount();
-        pager.getAdapter().registerDataSetObserver(new DataSetObserver() {
+    /**
+     * Visual and logical position distinction only happens in RTL locales (e.g. Persian)
+     * where pages positions are flipped thus it does nothing in LTR locales (e.g. English)
+     */
+    private float logicalPositionToVisual(float position) {
+        return isLocaleRtl ? numPages - 1 - position : position;
+    }
+
+    public void setViewPager(ViewPager2 pager) {
+        numPages = pager.getAdapter().getItemCount();
+        pager.getAdapter().registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {
             @Override
             public void onChanged() {
-                numPages = pager.getAdapter().getCount();
+                numPages = pager.getAdapter().getItemCount();
                 invalidate();
             }
         });
-        pager.addOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {
+        pager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
             @Override
             public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-                PagerIndicatorView.this.position = position + positionOffset;
+                PagerIndicatorView.this.position = logicalPositionToVisual(
+                        position + positionOffset);
                 invalidate();
             }
         });
     }
 
     public void setDisabledPage(int disabledPage) {
-        this.disabledPage = disabledPage;
+        this.disabledPage = (int) logicalPositionToVisual(disabledPage);
         invalidate();
     }
 

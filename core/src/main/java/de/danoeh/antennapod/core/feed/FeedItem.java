@@ -1,12 +1,15 @@
 package de.danoeh.antennapod.core.feed;
 
 import android.database.Cursor;
+
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import android.text.TextUtils;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
+import java.io.Serializable;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -24,7 +27,7 @@ import de.danoeh.antennapod.core.util.ShownotesProvider;
  *
  * @author daniel
  */
-public class FeedItem extends FeedComponent implements ShownotesProvider, ImageResource {
+public class FeedItem extends FeedComponent implements ShownotesProvider, ImageResource, Serializable {
 
     /** tag that indicates this item is in the queue */
     public static final String TAG_QUEUE = "Queue";
@@ -411,11 +414,12 @@ public class FeedItem extends FeedComponent implements ShownotesProvider, ImageR
     }
 
     /**
-     * Returns the image of this item or the image of the feed if this item does
-     * not have its own image.
+     * Returns the image of this item, as specified in the feed.
+     * To load the image that can be displayed to the user, use {@link #getImageLocation},
+     * which also considers embedded pictures or the feed picture if no other picture is present.
      */
     public String getImageUrl() {
-        return (imageUrl != null) ? imageUrl : feed.getImageUrl();
+        return imageUrl;
     }
 
     public void setImageUrl(String imageUrl) {
@@ -480,6 +484,7 @@ public class FeedItem extends FeedComponent implements ShownotesProvider, ImageR
      */
     public void removeTag(String tag) { tags.remove(tag); }
 
+    @NonNull
     @Override
     public String toString() {
         return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);

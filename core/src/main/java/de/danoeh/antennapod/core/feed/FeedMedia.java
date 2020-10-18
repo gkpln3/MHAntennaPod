@@ -209,7 +209,7 @@ public class FeedMedia extends FeedFile implements Playable {
      * currently being played.
      */
     public boolean isPlaying() {
-        return PlaybackPreferences.getCurrentlyPlayingMedia() == FeedMedia.PLAYABLE_TYPE_FEEDMEDIA
+        return PlaybackPreferences.getCurrentlyPlayingMediaType() == FeedMedia.PLAYABLE_TYPE_FEEDMEDIA
                 && PlaybackPreferences.getCurrentlyPlayingFeedMediaId() == id;
     }
 
@@ -224,7 +224,7 @@ public class FeedMedia extends FeedFile implements Playable {
 
     public boolean hasAlmostEnded() {
         int smartMarkAsPlayedSecs = UserPreferences.getSmartMarkAsPlayedSecs();
-        return this.position >= this.duration - smartMarkAsPlayedSecs * 1000;
+        return this.duration > 0 && this.position >= this.duration - smartMarkAsPlayedSecs * 1000;
     }
 
     @Override
@@ -481,7 +481,7 @@ public class FeedMedia extends FeedFile implements Playable {
 
     @Override
     public void onPlaybackStart() {
-        startPosition = (position > 0) ? position : 0;
+        startPosition = Math.max(position, 0);
         playedDurationWhenStarted = played_duration;
     }
 

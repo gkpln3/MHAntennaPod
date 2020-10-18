@@ -10,6 +10,7 @@ import de.danoeh.antennapod.R;
 import de.danoeh.antennapod.activity.BugReportActivity;
 import de.danoeh.antennapod.activity.PreferenceActivity;
 import de.danoeh.antennapod.core.util.IntentUtils;
+import de.danoeh.antennapod.fragment.preferences.about.AboutFragment;
 
 public class MainPreferencesFragment extends PreferenceFragmentCompat {
     private static final String TAG = "MainPreferencesFragment";
@@ -20,8 +21,9 @@ public class MainPreferencesFragment extends PreferenceFragmentCompat {
     private static final String PREF_SCREEN_GPODDER = "prefScreenGpodder";
     private static final String PREF_SCREEN_STORAGE = "prefScreenStorage";
     private static final String PREF_FAQ = "prefFaq";
-    private static final String PREF_VIEW_MAILING_LIST = "prefViewMailingList";
+    private static final String PREF_VIEW_FORUM = "prefViewForum";
     private static final String PREF_SEND_BUG_REPORT = "prefSendBugReport";
+    private static final String PREF_CATEGORY_PROJECT = "project";
     private static final String STATISTICS = "statistics";
     private static final String PREF_ABOUT = "prefAbout";
 
@@ -30,6 +32,13 @@ public class MainPreferencesFragment extends PreferenceFragmentCompat {
         addPreferencesFromResource(R.xml.preferences);
         setupMainScreen();
         setupSearch();
+
+        // If you are writing a spin-off, please update the details on screens like "About" and "Report bug"
+        // and afterwards remove the following lines.
+        String packageName = getContext().getPackageName();
+        if (!"de.danoeh.antennapod".equals(packageName) && !"de.danoeh.antennapod.debug".equals(packageName)) {
+            findPreference(PREF_CATEGORY_PROJECT).setVisible(false);
+        }
     }
 
     @Override
@@ -62,14 +71,14 @@ public class MainPreferencesFragment extends PreferenceFragmentCompat {
 
         findPreference(PREF_ABOUT).setOnPreferenceClickListener(
                 preference -> {
-                    getFragmentManager().beginTransaction().replace(R.id.content, new AboutFragment())
+                    getParentFragmentManager().beginTransaction().replace(R.id.content, new AboutFragment())
                             .addToBackStack(getString(R.string.about_pref)).commit();
                     return true;
                 }
         );
         findPreference(STATISTICS).setOnPreferenceClickListener(
                 preference -> {
-                    getFragmentManager().beginTransaction().replace(R.id.content, new StatisticsFragment())
+                    getParentFragmentManager().beginTransaction().replace(R.id.content, new StatisticsFragment())
                             .addToBackStack(getString(R.string.statistics_label)).commit();
                     return true;
                 }
@@ -78,8 +87,8 @@ public class MainPreferencesFragment extends PreferenceFragmentCompat {
             IntentUtils.openInBrowser(getContext(), "https://antennapod.org/faq.html");
             return true;
         });
-        findPreference(PREF_VIEW_MAILING_LIST).setOnPreferenceClickListener(preference -> {
-            IntentUtils.openInBrowser(getContext(), "https://groups.google.com/forum/#!forum/antennapod");
+        findPreference(PREF_VIEW_FORUM).setOnPreferenceClickListener(preference -> {
+            IntentUtils.openInBrowser(getContext(), "https://forum.antennapod.org/");
             return true;
         });
         findPreference(PREF_SEND_BUG_REPORT).setOnPreferenceClickListener(preference -> {

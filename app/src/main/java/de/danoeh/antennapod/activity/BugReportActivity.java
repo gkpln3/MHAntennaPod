@@ -7,7 +7,7 @@ import android.os.Bundle;
 import com.google.android.material.snackbar.Snackbar;
 import androidx.appcompat.app.AppCompatActivity;
 import android.widget.TextView;
-import de.danoeh.antennapod.CrashReportWriter;
+import de.danoeh.antennapod.error.CrashReportWriter;
 import de.danoeh.antennapod.R;
 import de.danoeh.antennapod.core.preferences.UserPreferences;
 import de.danoeh.antennapod.core.util.IntentUtils;
@@ -42,9 +42,8 @@ public class BugReportActivity extends AppCompatActivity {
         }
         crashDetailsTextView.setText(crashDetailsText);
 
-        findViewById(R.id.btn_open_bug_tracker).setOnClickListener(v -> {
-            IntentUtils.openInBrowser(BugReportActivity.this, "https://github.com/AntennaPod/AntennaPod/issues");
-        });
+        findViewById(R.id.btn_open_bug_tracker).setOnClickListener(v -> IntentUtils.openInBrowser(
+                BugReportActivity.this, "https://github.com/AntennaPod/AntennaPod/issues"));
 
         findViewById(R.id.btn_copy_log).setOnClickListener(v -> {
             ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);

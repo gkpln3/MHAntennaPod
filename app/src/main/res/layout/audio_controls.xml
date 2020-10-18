@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -38,41 +39,10 @@
 
         </LinearLayout>
 
-        <LinearLayout
+        <de.danoeh.antennapod.view.PlaybackSpeedSeekBar
+            android:id="@+id/speed_seek_bar"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <Button
-                android:id="@+id/butDecSpeed"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:gravity="center"
-                android:text="-"
-                android:textStyle="bold"
-                android:textColor="?attr/colorAccent"
-                android:textSize="24sp"
-                android:background="?attr/selectableItemBackgroundBorderless" />
-
-            <SeekBar
-                android:id="@+id/playback_speed"
-                android:layout_width="0dp"
-                android:layout_height="32dp"
-                android:max="70"
-                android:layout_weight="1" />
-
-            <Button
-                android:id="@+id/butIncSpeed"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:minWidth="0dp"
-                android:gravity="center"
-                android:text="+"
-                android:textStyle="bold"
-                android:textColor="?attr/colorAccent"
-                android:textSize="24sp"
-                android:background="?attr/selectableItemBackgroundBorderless" />
-        </LinearLayout>
+            android:layout_height="wrap_content"/>
 
         <TextView
             android:layout_width="wrap_content"

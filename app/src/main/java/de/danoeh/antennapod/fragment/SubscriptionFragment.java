@@ -5,10 +5,14 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.widget.ProgressBar;
 import androidx.annotation.StringRes;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
@@ -19,8 +23,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.GridView;
+import android.widget.TextView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.joanzapata.iconify.Iconify;
 
 import java.util.concurrent.Callable;
 
@@ -34,6 +40,7 @@ import de.danoeh.antennapod.core.event.FeedListUpdateEvent;
 import de.danoeh.antennapod.core.event.UnreadItemsUpdateEvent;
 import de.danoeh.antennapod.core.feed.Feed;
 import de.danoeh.antennapod.core.preferences.PlaybackPreferences;
+import de.danoeh.antennapod.core.preferences.UserPreferences;
 import de.danoeh.antennapod.core.service.download.DownloadService;
 import de.danoeh.antennapod.core.service.playback.PlaybackService;
 import de.danoeh.antennapod.core.storage.DBReader;
@@ -42,6 +49,8 @@ import de.danoeh.antennapod.core.storage.DownloadRequester;
 import de.danoeh.antennapod.core.util.FeedItemUtil;
 import de.danoeh.antennapod.core.util.IntentUtils;
 import de.danoeh.antennapod.core.util.download.AutoUpdateManager;
+import de.danoeh.antennapod.dialog.SubscriptionsFilterDialog;
+import de.danoeh.antennapod.dialog.FeedSortDialog;
 import de.danoeh.antennapod.dialog.RenameFeedDialog;
 import de.danoeh.antennapod.making_history.MHDefaultFeedLoader;
 import de.danoeh.antennapod.menuhandler.MenuItemUtils;
@@ -69,6 +78,7 @@ public class SubscriptionFragment extends Fragment {
     private FloatingActionButton subscriptionAddButton;
     private ProgressBar progressBar;
     private EmptyViewHandler emptyView;
+    private TextView feedsFilteredMsg;
 
     private int mPosition = -1;
     private boolean isUpdatingFeeds = false;
@@ -91,10 +101,20 @@ public class SubscriptionFragment extends Fragment {
         View root = inflater.inflate(R.layout.fragment_subscriptions, container, false);
         ((AppCompatActivity) getActivity()).setSupportActionBar(root.findViewById(R.id.toolbar));
         subscriptionGridLayout = root.findViewById(R.id.subscriptions_grid);
-        subscriptionGridLayout.setNumColumns(prefs.getInt(PREF_NUM_COLUMNS, 3));
+        subscriptionGridLayout.setNumColumns(prefs.getInt(PREF_NUM_COLUMNS, getDefaultNumOfColumns()));
         registerForContextMenu(subscriptionGridLayout);
         subscriptionAddButton = root.findViewById(R.id.subscriptions_add);
         progressBar = root.findViewById(R.id.progLoading);
+
+        feedsFilteredMsg = root.findViewById(R.id.feeds_filtered_message);
+        feedsFilteredMsg.setOnClickListener((l) -> SubscriptionsFilterDialog.showDialog(requireContext()));
+
+        SwipeRefreshLayout swipeRefreshLayout = root.findViewById(R.id.swipeRefresh);
+        swipeRefreshLayout.setOnRefreshListener(() -> {
+            AutoUpdateManager.runImmediate(requireContext());
+            new Handler(Looper.getMainLooper()).postDelayed(() -> swipeRefreshLayout.setRefreshing(false),
+                    getResources().getInteger(R.integer.swipe_to_refresh_duration_in_ms));
+        });
         return root;
     }
 
@@ -103,7 +123,7 @@ public class SubscriptionFragment extends Fragment {
         super.onCreateOptionsMenu(menu, inflater);
         inflater.inflate(R.menu.subscriptions, menu);
 
-        int columns = prefs.getInt(PREF_NUM_COLUMNS, 3);
+        int columns = prefs.getInt(PREF_NUM_COLUMNS, getDefaultNumOfColumns());
         menu.findItem(R.id.subscription_num_columns_2).setChecked(columns == 2);
         menu.findItem(R.id.subscription_num_columns_3).setChecked(columns == 3);
         menu.findItem(R.id.subscription_num_columns_4).setChecked(columns == 4);
@@ -120,6 +140,12 @@ public class SubscriptionFragment extends Fragment {
         switch (item.getItemId()) {
             case R.id.refresh_item:
                 AutoUpdateManager.runImmediate(requireContext());
+                return true;
+            case R.id.subscriptions_filter:
+                SubscriptionsFilterDialog.showDialog(requireContext());
+                return true;
+            case R.id.subscriptions_sort:
+                FeedSortDialog.showDialog(requireContext());
                 return true;
             case R.id.subscription_num_columns_2:
                 setColumnNumber(2);
@@ -199,6 +225,18 @@ public class SubscriptionFragment extends Fragment {
                     emptyView.updateVisibility();
                     progressBar.setVisibility(View.GONE);
                 }, error -> Log.e(TAG, Log.getStackTraceString(error)));
+
+        if (UserPreferences.getSubscriptionsFilter().isEnabled()) {
+            feedsFilteredMsg.setText("{md-info-outline} " + getString(R.string.subscriptions_are_filtered));
+            Iconify.addIcons(feedsFilteredMsg);
+            feedsFilteredMsg.setVisibility(View.VISIBLE);
+        } else {
+            feedsFilteredMsg.setVisibility(View.GONE);
+        }
+    }
+
+    private int getDefaultNumOfColumns() {
+        return getResources().getInteger(R.integer.subscriptions_default_num_of_columns);
     }
 
     @Override

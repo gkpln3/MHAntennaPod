@@ -1,5 +1,7 @@
 package de.danoeh.antennapod.fragment;
 
+import android.content.Context;
+import android.content.res.Configuration;
 import android.graphics.drawable.Drawable;
 import android.animation.Animator;
 import android.content.ActivityNotFoundException;
@@ -12,6 +14,7 @@ import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Patterns;
 import android.view.LayoutInflater;
@@ -21,9 +24,13 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.resource.bitmap.FitCenter;
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners;
@@ -58,6 +65,7 @@ import org.greenrobot.eventbus.ThreadMode;
 public class CoverFragment extends Fragment {
 
     private static final String TAG = "CoverFragment";
+    static final double SIXTEEN_BY_NINE = 1.7;
 
     private View root;
     private TextView txtvPodcastTitle;
@@ -88,6 +96,11 @@ public class CoverFragment extends Fragment {
         return root;
     }
 
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        configureForOrientation(getResources().getConfiguration());
+    }
+
     private void loadMediaInfo() {
         if (disposable != null) {
             disposable.dispose();
@@ -99,13 +112,12 @@ public class CoverFragment extends Fragment {
             } else {
                 emitter.onComplete();
             }
-        })
-        .subscribeOn(Schedulers.io())
-        .observeOn(AndroidSchedulers.mainThread())
-        .subscribe(media -> {
-            this.media = media;
-            displayMediaInfo(media);
-        }, error -> Log.e(TAG, Log.getStackTraceString(error)));
+        }).subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(media -> {
+                    this.media = media;
+                    displayMediaInfo(media);
+                }, error -> Log.e(TAG, Log.getStackTraceString(error)));
     }
 
     private void displayMediaInfo(@NonNull Playable media) {
@@ -222,6 +234,10 @@ public class CoverFragment extends Fragment {
     @Override
     public void onStop() {
         super.onStop();
+
+        if (disposable != null) {
+            disposable.dispose();
+        }
         controller.release();
         controller = null;
         EventBus.getDefault().unregister(this);
@@ -265,11 +281,46 @@ public class CoverFragment extends Fragment {
     }
 
     @Override
-    public void onDestroyView() {
-        super.onDestroyView();
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
 
-        if (disposable != null) {
-            disposable.dispose();
+        configureForOrientation(newConfig);
+    }
+
+    public float convertDpToPixel(float dp) {
+        Context context = this.getActivity().getApplicationContext();
+        return dp * ((float) context.getResources().getDisplayMetrics().densityDpi / DisplayMetrics.DENSITY_DEFAULT);
+    }
+
+    private void configureForOrientation(Configuration newConfig) {
+        LinearLayout mainContainer = getView().findViewById(R.id.cover_fragment);
+        LinearLayout textContainer = getView().findViewById(R.id.cover_fragment_text_container);
+
+        LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) imgvCover.getLayoutParams();
+        LinearLayout.LayoutParams textParams = (LinearLayout.LayoutParams) textContainer.getLayoutParams();
+        double ratio = (float) newConfig.screenHeightDp / (float) newConfig.screenWidthDp;
+
+        if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
+            double percentageWidth = 0.8;
+            if (ratio <= SIXTEEN_BY_NINE) {
+                percentageWidth = (ratio / SIXTEEN_BY_NINE) * percentageWidth * 0.8;
+            }
+            mainContainer.setOrientation(LinearLayout.VERTICAL);
+            if (newConfig.screenWidthDp > 0) {
+                params.width = (int) (convertDpToPixel(newConfig.screenWidthDp) * percentageWidth);
+                params.height = params.width;
+                textParams.weight = 0;
+                imgvCover.setLayoutParams(params);
+            }
+        } else {
+            double percentageHeight = ratio * 0.8;
+            mainContainer.setOrientation(LinearLayout.HORIZONTAL);
+            if (newConfig.screenHeightDp > 0) {
+                params.height = (int) (convertDpToPixel(newConfig.screenHeightDp) * percentageHeight);
+                params.width = params.height;
+                textParams.weight = 1;
+                imgvCover.setLayoutParams(params);
+            }
         }
     }
 

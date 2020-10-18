@@ -14,14 +14,17 @@ public class FastBlurTransformation extends BitmapTransformation {
 
     private static final String TAG = FastBlurTransformation.class.getSimpleName();
 
-    private static final int STACK_BLUR_RADIUS = 5;
+    private static final int STACK_BLUR_RADIUS = 10;
 
     public FastBlurTransformation() {
         super();
     }
 
     @Override
-    protected Bitmap transform(BitmapPool pool, Bitmap source, int outWidth, int outHeight) {
+    protected Bitmap transform(@NonNull BitmapPool pool,
+                               @NonNull Bitmap source,
+                               int outWidth,
+                               int outHeight) {
         int targetWidth = outWidth / 3;
         int targetHeight = (int) (1.0 * outHeight * targetWidth / outWidth);
         Bitmap resized = ThumbnailUtils.extractThumbnail(source, targetWidth, targetHeight);

@@ -9,11 +9,6 @@
         android:background="?attr/selectableItemBackground"
         android:orientation="vertical">
 
-    <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="?android:attr/dividerHorizontal" />
-
     <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
@@ -22,12 +17,14 @@
 
         <ImageView
                 android:id="@+id/imgvCover"
-                android:contentDescription="@string/cover_label"
+                android:contentDescription="@string/media_player"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:adjustViewBounds="true"
                 android:cropToPadding="true"
-                android:scaleType="centerCrop"
+                android:maxWidth="96dp"
+                android:scaleType="fitCenter"
+                android:background="@color/non_square_icon_background"
                 tools:src="@tools:sample/avatars"/>
 
 

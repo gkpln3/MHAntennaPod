@@ -1,40 +1,50 @@
 ---
 name: Bug report
 about: Create a report to help us improve existing features
-
+labels: 'possible bug'
 ---
 
-<!--
-DELETE ME
+# Checklist
+<!-- Place an x in the boxes to tick them: [x] -->
 
-Use the search function to see if someone else has already submitted the same bug report.
+- [ ] I have used the search function to see if someone else has already submitted the same bug report.
+- [ ] I will describe the problem with as much detail as possible.
+- [ ] If the bug only to occurs with a certain podcast, I will include the URL of that podcast.
 
-You don't need to adhere to the template strictly. Feel free to leave out information you feel is not important or does not make sense.
+# System info
+<!-- The following information is very important to fill out because some bugs may only occur on certain devices or versions of Android. -->
 
-If you are experiencing a crash, including the stacktrace will likely get it fixed sooner.
--->
+**App version**: x.y.z
+<!-- The latest version may be different depending on your device. You can find the version in AntennaPod's settings. -->
 
-**App version**: 1.x (from Google Play/F-Droid/Custom build)
+**App source**: Google Play / F-Droid / ...
+<!-- Please delete irrelevant answer or fill in the blank -->
 
-**Android version**: 5.x [Please mention if you are using a custom rom!]
+**Android version**: 5.x (Please mention if you are using a custom rom!)
 
 **Device model**:
 
-**Expected behaviour**:
-
-**Current behaviour**:
-
-**First occurred**: Version 1.x / about x days/weeks ago
+# Bug description
 
 **Steps to reproduce**:
-
 1. This
-1. Than that
-1. Then
+2. Then that
+3. Then this
+4. Etc.
 
-**Environment**: [Settings you have changed, e.g. Auto Download. "Unusual" devices you use, e.g. Bluetooth headphones. Do you still use Prestissimo? Did you select another media player?]
+**Expected behaviour**:
+<!-- After following the steps, what did you think AntennaPod would do? -->
 
-**Stacktrace/Logcat**: 
+**Current behaviour**:
+<!-- What did AntennaPod do instead? Screenshots might help. Usually, you can take a screenshot of your smartphone by pressing *Power* + *Volume down* for a few seconds. -->
+
+**First occurred**: (e.g. about x days/weeks ago)
+
+**Environment**:
+<!-- Settings you have changed (e.g. Auto Download, changed media player). "Unusual" devices you use (e.g. Bluetooth headphones). -->
+
+**Stacktrace/Logcat**:
+<!-- If you are experiencing a crash, including the stacktrace will likely get it fixed sooner. AntennaPod has an `export logs` feature for this. -->
 ```
 [if available]
 ```

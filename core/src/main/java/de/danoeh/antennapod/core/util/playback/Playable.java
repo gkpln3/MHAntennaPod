@@ -3,7 +3,7 @@ package de.danoeh.antennapod.core.util.playback;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Parcelable;
-import android.preference.PreferenceManager;
+import androidx.preference.PreferenceManager;
 import androidx.annotation.Nullable;
 import android.util.Log;
 
@@ -188,7 +188,7 @@ public interface Playable extends Parcelable,
          */
         @Nullable
         public static Playable createInstanceFromPreferences(Context context) {
-            long currentlyPlayingMedia = PlaybackPreferences.getCurrentlyPlayingMedia();
+            long currentlyPlayingMedia = PlaybackPreferences.getCurrentlyPlayingMediaType();
             if (currentlyPlayingMedia != PlaybackPreferences.NO_MEDIA_PLAYING) {
                 SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context.getApplicationContext());
                 return PlayableUtils.createInstanceFromPreferences(context,

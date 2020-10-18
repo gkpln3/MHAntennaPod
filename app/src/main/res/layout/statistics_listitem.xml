@@ -12,7 +12,7 @@
 
     <ImageView
             android:id="@+id/imgvCover"
-            android:contentDescription="@string/cover_label"
+            android:importantForAccessibility="no"
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:layout_alignParentLeft="true"
@@ -20,8 +20,8 @@
             android:layout_centerVertical="true"
             android:adjustViewBounds="true"
             android:cropToPadding="true"
-            android:scaleType="centerCrop"
-            tools:src="@drawable/ic_antenna"
+            android:scaleType="fitCenter"
+            tools:src="@tools:sample/avatars"
             tools:background="@android:color/holo_green_dark"/>
 
     <TextView

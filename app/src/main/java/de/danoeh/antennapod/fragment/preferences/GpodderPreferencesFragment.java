@@ -3,11 +3,14 @@ package de.danoeh.antennapod.fragment.preferences;
 import android.app.Activity;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import androidx.core.text.HtmlCompat;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
-import android.text.Html;
+
+import android.text.Spanned;
 import android.text.format.DateUtils;
 import android.widget.Toast;
+import com.google.android.material.snackbar.Snackbar;
 import de.danoeh.antennapod.R;
 import de.danoeh.antennapod.activity.PreferenceActivity;
 import de.danoeh.antennapod.core.event.SyncServiceEvent;
@@ -91,8 +94,7 @@ public class GpodderPreferencesFragment extends PreferenceFragmentCompat {
         });
         findPreference(PREF_GPODNET_LOGOUT).setOnPreferenceClickListener(preference -> {
             GpodnetPreferences.logout();
-            Toast toast = Toast.makeText(activity, R.string.pref_gpodnet_logout_toast, Toast.LENGTH_SHORT);
-            toast.show();
+            Snackbar.make(getView(), R.string.pref_gpodnet_logout_toast, Snackbar.LENGTH_LONG).show();
             updateGpodnetPreferenceScreen();
             return true;
         });
@@ -115,7 +117,8 @@ public class GpodderPreferencesFragment extends PreferenceFragmentCompat {
             String format = getActivity().getString(R.string.pref_gpodnet_login_status);
             String summary = String.format(format, GpodnetPreferences.getUsername(),
                     GpodnetPreferences.getDeviceID());
-            findPreference(PREF_GPODNET_LOGOUT).setSummary(Html.fromHtml(summary));
+            Spanned formattedSummary = HtmlCompat.fromHtml(summary, HtmlCompat.FROM_HTML_MODE_LEGACY);
+            findPreference(PREF_GPODNET_LOGOUT).setSummary(formattedSummary);
             updateLastGpodnetSyncReport(SyncService.isLastSyncSuccessful(getContext()),
                     SyncService.getLastSyncAttempt(getContext()));
         } else {

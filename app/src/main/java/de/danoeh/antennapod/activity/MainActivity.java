@@ -6,12 +6,16 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.content.res.Resources;
+import android.media.AudioManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
+import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.ContextMenu;
-import android.view.MenuInflater;
+import android.util.TypedValue;
+import android.view.KeyEvent;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,6 +27,8 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.content.ContextCompat;
+import androidx.core.view.ViewCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
@@ -38,11 +44,10 @@ import de.danoeh.antennapod.core.event.MessageEvent;
 import de.danoeh.antennapod.core.feed.Feed;
 import de.danoeh.antennapod.core.preferences.PlaybackPreferences;
 import de.danoeh.antennapod.core.preferences.UserPreferences;
+import de.danoeh.antennapod.core.receiver.MediaButtonReceiver;
 import de.danoeh.antennapod.core.service.playback.PlaybackService;
-import de.danoeh.antennapod.core.storage.DBWriter;
-import de.danoeh.antennapod.core.util.FeedItemUtil;
-import de.danoeh.antennapod.core.util.IntentUtils;
 import de.danoeh.antennapod.core.util.StorageUtils;
+import de.danoeh.antennapod.core.util.ThemeUtils;
 import de.danoeh.antennapod.core.util.download.AutoUpdateManager;
 import de.danoeh.antennapod.dialog.RatingDialog;
 import de.danoeh.antennapod.dialog.RenameFeedDialog;
@@ -81,15 +86,16 @@ public class MainActivity extends CastEnabledActivity {
     public static final String EXTRA_FEED_ID = "fragment_feed_id";
     public static final String EXTRA_OPEN_PLAYER = "open_player";
     public static final String EXTRA_REFRESH_ON_START = "refresh_on_start";
+    public static final String EXTRA_STARTED_FROM_SEARCH = "started_from_search";
+    public static final String KEY_GENERATED_VIEW_ID = "generated_view_id";
 
-    private static final String SAVE_BACKSTACK_COUNT = "backstackCount";
-
-    private DrawerLayout drawerLayout;
+    private @Nullable DrawerLayout drawerLayout;
+    private @Nullable ActionBarDrawerToggle drawerToggle;
     private View navDrawer;
-    private ActionBarDrawerToggle drawerToggle;
     private LockableBottomSheetBehavior sheetBehavior;
     private long lastBackButtonPressTime = 0;
     private RecyclerView.RecycledViewPool recycledViewPool = new RecyclerView.RecycledViewPool();
+    private int lastTheme = 0;
 
     @NonNull
     public static Intent getIntentToOpenFeed(@NonNull Context context, long feedId) {
@@ -101,25 +107,31 @@ public class MainActivity extends CastEnabledActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        setTheme(UserPreferences.getNoTitleTheme());
+        lastTheme = UserPreferences.getNoTitleTheme();
+        setTheme(lastTheme);
+        if (savedInstanceState != null) {
+            ensureGeneratedViewIdGreaterThan(savedInstanceState.getInt(KEY_GENERATED_VIEW_ID, 0));
+        }
         super.onCreate(savedInstanceState);
         StorageUtils.checkStorageAvailability(this);
         setContentView(R.layout.main);
-        recycledViewPool.setMaxRecycledViews(R.id.episode_item_view_holder, 25);
+        recycledViewPool.setMaxRecycledViews(R.id.view_type_episode_item, 25);
 
         drawerLayout = findViewById(R.id.drawer_layout);
         navDrawer = findViewById(R.id.navDrawerFragment);
+        setNavDrawerSize();
 
         final FragmentManager fm = getSupportFragmentManager();
-        fm.addOnBackStackChangedListener(() ->
-                drawerToggle.setDrawerIndicatorEnabled(fm.getBackStackEntryCount() == 0));
+        fm.addOnBackStackChangedListener(() -> {
+            boolean showArrow = fm.getBackStackEntryCount() != 0;
+            if (drawerToggle != null) { // Tablet layout does not have a drawer
+                drawerToggle.setDrawerIndicatorEnabled(!showArrow);
+            } else if (getActionBar() != null) {
+                getActionBar().setDisplayHomeAsUpEnabled(showArrow);
+            }
+        });
 
-        FragmentTransaction transaction = fm.beginTransaction();
-
-        Fragment mainFragment = fm.findFragmentByTag(MAIN_FRAGMENT_TAG);
-        if (mainFragment != null) {
-            transaction.replace(R.id.main_view, mainFragment);
-        } else {
+        if (fm.findFragmentByTag(MAIN_FRAGMENT_TAG) == null) {
             String lastFragment = NavDrawerFragment.getLastNavFragment(this);
             if (ArrayUtils.contains(NavDrawerFragment.NAV_DRAWER_TAGS, lastFragment)) {
                 loadFragment(lastFragment, null);
@@ -134,6 +146,8 @@ public class MainActivity extends CastEnabledActivity {
                 }
             }
         }
+
+        FragmentTransaction transaction = fm.beginTransaction();
         NavDrawerFragment navDrawerFragment = new NavDrawerFragment();
         transaction.replace(R.id.navDrawerFragment, navDrawerFragment, NavDrawerFragment.TAG);
         AudioPlayerFragment audioPlayerFragment = new AudioPlayerFragment();
@@ -150,6 +164,25 @@ public class MainActivity extends CastEnabledActivity {
         sheetBehavior.setPeekHeight((int) getResources().getDimension(R.dimen.external_player_height));
         sheetBehavior.setHideable(false);
         sheetBehavior.setBottomSheetCallback(bottomSheetCallback);
+    }
+
+    /**
+     * ViewCompat.generateViewId stores the current ID in a static variable.
+     * When the process is killed, the variable gets reset.
+     * This makes sure that we do not get ID collisions
+     * and therefore errors when trying to restore state from another view.
+     */
+    @SuppressWarnings("StatementWithEmptyBody")
+    private void ensureGeneratedViewIdGreaterThan(int minimum) {
+        while (ViewCompat.generateViewId() <= minimum) {
+            // Generate new IDs
+        }
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt(KEY_GENERATED_VIEW_ID, ViewCompat.generateViewId());
     }
 
     private BottomSheetBehavior.BottomSheetCallback bottomSheetCallback =
@@ -171,11 +204,18 @@ public class MainActivity extends CastEnabledActivity {
 
     @Override
     public void setSupportActionBar(@Nullable Toolbar toolbar) {
-        drawerLayout.removeDrawerListener(drawerToggle);
-        drawerToggle = new ActionBarDrawerToggle(this, drawerLayout, toolbar,
-                R.string.drawer_open, R.string.drawer_close);
-        drawerLayout.addDrawerListener(drawerToggle);
-        drawerToggle.syncState();
+        if (drawerLayout != null) { // Tablet layout does not have a drawer
+            drawerLayout.removeDrawerListener(drawerToggle);
+            drawerToggle = new ActionBarDrawerToggle(this, drawerLayout, toolbar,
+                    R.string.drawer_open, R.string.drawer_close);
+            drawerLayout.addDrawerListener(drawerToggle);
+            drawerToggle.syncState();
+            drawerToggle.setDrawerIndicatorEnabled(getSupportFragmentManager().getBackStackEntryCount() == 0);
+        } else if (getSupportFragmentManager().getBackStackEntryCount() == 0) {
+            toolbar.setNavigationIcon(null);
+        } else {
+            toolbar.setNavigationIcon(ThemeUtils.getDrawableFromAttr(this, R.attr.homeAsUpIndicator));
+        }
         super.setSupportActionBar(toolbar);
     }
 
@@ -183,6 +223,11 @@ public class MainActivity extends CastEnabledActivity {
         SharedPreferences prefs = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
         if (prefs.getBoolean(PREF_IS_FIRST_LAUNCH, true)) {
             loadFragment(SubscriptionFragment.TAG, null);
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                if (drawerLayout != null) { // Tablet layout does not have a drawer
+                    drawerLayout.openDrawer(navDrawer);
+                }
+            }, 1500);
 
             // for backward compatibility, we only change defaults for fresh installs
             UserPreferences.setUpdateInterval(12);
@@ -276,7 +321,10 @@ public class MainActivity extends CastEnabledActivity {
         // not commit anything in an AsyncTask, but that's a bigger
         // change than we want now.
         t.commitAllowingStateLoss();
-        drawerLayout.closeDrawer(navDrawer);
+
+        if (drawerLayout != null) { // Tablet layout does not have a drawer
+            drawerLayout.closeDrawer(navDrawer);
+        }
     }
 
     public void loadChildFragment(Fragment fragment, TransitionEffect transition) {
@@ -310,19 +358,44 @@ public class MainActivity extends CastEnabledActivity {
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
-        drawerToggle.syncState();
+        if (drawerToggle != null) { // Tablet layout does not have a drawer
+            drawerToggle.syncState();
+        }
     }
 
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        drawerToggle.onConfigurationChanged(newConfig);
+        if (drawerToggle != null) { // Tablet layout does not have a drawer
+            drawerToggle.onConfigurationChanged(newConfig);
+        }
+        setNavDrawerSize();
+    }
+
+    private void setNavDrawerSize() {
+        if (drawerToggle == null) { // Tablet layout does not have a drawer
+            return;
+        }
+        float screenPercent = getResources().getInteger(R.integer.nav_drawer_screen_size_percent) * 0.01f;
+        int width = (int) (getScreenWidth() * screenPercent);
+        int maxWidth = (int) getResources().getDimension(R.dimen.nav_drawer_max_screen_size);
+
+        navDrawer.getLayoutParams().width = Math.min(width, maxWidth);
+    }
+
+    private int getScreenWidth() {
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        return displayMetrics.widthPixels;
     }
 
     @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        outState.putInt(SAVE_BACKSTACK_COUNT, getSupportFragmentManager().getBackStackEntryCount());
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+
+        if (getBottomSheet().getState() == BottomSheetBehavior.STATE_EXPANDED) {
+            bottomSheetCallback.onSlide(null, 1.0f);
+        }
     }
 
     @Override
@@ -330,11 +403,11 @@ public class MainActivity extends CastEnabledActivity {
         super.onStart();
         EventBus.getDefault().register(this);
         RatingDialog.init(this);
-    }
 
-    @Override
-    protected void onPause() {
-        super.onPause();
+        if (lastTheme != UserPreferences.getNoTitleTheme()) {
+            finish();
+            startActivity(new Intent(this, MainActivity.class));
+        }
     }
 
     @Override
@@ -366,7 +439,7 @@ public class MainActivity extends CastEnabledActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (drawerToggle.onOptionsItemSelected(item)) {
+        if (drawerToggle != null && drawerToggle.onOptionsItemSelected(item)) { // Tablet layout does not have a drawer
             return true;
         } else if (item.getItemId() == android.R.id.home) {
             if (getSupportFragmentManager().getBackStackEntryCount() > 0) {
@@ -390,7 +463,9 @@ public class MainActivity extends CastEnabledActivity {
         } else {
             switch (UserPreferences.getBackButtonBehavior()) {
                 case OPEN_DRAWER:
-                    drawerLayout.openDrawer(navDrawer);
+                    if (drawerLayout != null) { // Tablet layout does not have drawer
+                        drawerLayout.openDrawer(navDrawer);
+                    }
                     break;
                 case SHOW_PROMPT:
                     new AlertDialog.Builder(this)
@@ -423,12 +498,11 @@ public class MainActivity extends CastEnabledActivity {
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onEventMainThread(MessageEvent event) {
         Log.d(TAG, "onEvent(" + event + ")");
-        View parentLayout = findViewById(R.id.drawer_layout);
-        Snackbar snackbar = Snackbar.make(parentLayout, event.message, Snackbar.LENGTH_SHORT);
+
+        Snackbar snackbar = showSnackbarAbovePlayer(event.message, Snackbar.LENGTH_SHORT);
         if (event.action != null) {
             snackbar.setAction(getString(R.string.undo), v -> event.action.run());
         }
-        snackbar.show();
     }
 
     private void handleNavIntent() {
@@ -446,8 +520,13 @@ public class MainActivity extends CastEnabledActivity {
             if (tag != null) {
                 loadFragment(tag, args);
             } else if (feedId > 0) {
-                loadFeedFragmentById(feedId, args);
+                if (intent.getBooleanExtra(EXTRA_STARTED_FROM_SEARCH, false)) {
+                    loadChildFragment(FeedItemlistFragment.newInstance(feedId));
+                } else {
+                    loadFeedFragmentById(feedId, args);
+                }
             }
+            sheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
         } else if (intent.getBooleanExtra(EXTRA_OPEN_PLAYER, false)) {
             sheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
             bottomSheetCallback.onSlide(null, 1.0f);
@@ -461,4 +540,71 @@ public class MainActivity extends CastEnabledActivity {
         super.onNewIntent(intent);
         setIntent(intent);
     }
+
+    public Snackbar showSnackbarAbovePlayer(CharSequence text, int duration) {
+        Snackbar s;
+        if (getBottomSheet().getState() == BottomSheetBehavior.STATE_COLLAPSED) {
+            s = Snackbar.make(findViewById(R.id.main_view), text, duration);
+            if (findViewById(R.id.audioplayerFragment).getVisibility() == View.VISIBLE) {
+                s.setAnchorView(findViewById(R.id.audioplayerFragment));
+            }
+        } else {
+            s = Snackbar.make(findViewById(android.R.id.content), text, duration);
+        }
+        s.show();
+        return s;
+    }
+
+    public Snackbar showSnackbarAbovePlayer(int text, int duration) {
+        return showSnackbarAbovePlayer(getResources().getText(text), duration);
+    }
+
+    //Hardware keyboard support
+    @Override
+    public boolean onKeyUp(int keyCode, KeyEvent event) {
+        AudioManager audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
+        Integer customKeyCode = null;
+
+        switch (keyCode) {
+            case KeyEvent.KEYCODE_P:
+                customKeyCode = KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE;
+                break;
+            case KeyEvent.KEYCODE_J: //Fallthrough
+            case KeyEvent.KEYCODE_A:
+            case KeyEvent.KEYCODE_COMMA:
+                customKeyCode = KeyEvent.KEYCODE_MEDIA_REWIND;
+                break;
+            case KeyEvent.KEYCODE_K: //Fallthrough
+            case KeyEvent.KEYCODE_D:
+            case KeyEvent.KEYCODE_PERIOD:
+                customKeyCode = KeyEvent.KEYCODE_MEDIA_FAST_FORWARD;
+                break;
+            case KeyEvent.KEYCODE_PLUS: //Fallthrough
+            case KeyEvent.KEYCODE_W:
+                audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC,
+                        AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI);
+                return true;
+            case KeyEvent.KEYCODE_MINUS: //Fallthrough
+            case KeyEvent.KEYCODE_S:
+                audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC,
+                        AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI);
+                return true;
+            case KeyEvent.KEYCODE_M:
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC,
+                            AudioManager.ADJUST_TOGGLE_MUTE, AudioManager.FLAG_SHOW_UI);
+                    return true;
+                }
+                break;
+        }
+
+        if (customKeyCode != null) {
+            Intent intent = new Intent(this, PlaybackService.class);
+            intent.putExtra(MediaButtonReceiver.EXTRA_KEYCODE, customKeyCode);
+            ContextCompat.startForegroundService(this, intent);
+            return true;
+        }
+        return super.onKeyUp(keyCode, event);
+    }
+
 }

@@ -5,7 +5,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.TypedArray;
 import android.graphics.drawable.Drawable;
-import android.preference.PreferenceManager;
+import androidx.preference.PreferenceManager;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -33,6 +33,7 @@ import de.danoeh.antennapod.fragment.SubscriptionFragment;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.lang.ref.WeakReference;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -60,7 +61,7 @@ public class NavListAdapter extends BaseAdapter
 
     private final ItemAccess itemAccess;
     private final WeakReference<Activity> activity;
-    private boolean showSubscriptionList = true;
+    public boolean showSubscriptionList = true;
 
     public NavListAdapter(ItemAccess itemAccess, Activity context) {
         this.itemAccess = itemAccess;
@@ -193,7 +194,7 @@ public class NavListAdapter extends BaseAdapter
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         int viewType = getItemViewType(position);
-        View v = null;
+        View v;
         if (viewType == VIEW_TYPE_NAV) {
             v = getNavView((String) getItem(position), position, convertView, parent);
         } else if (viewType == VIEW_TYPE_SECTION_DIVIDER) {
@@ -246,19 +247,19 @@ public class NavListAdapter extends BaseAdapter
         if (tag.equals(QueueFragment.TAG)) {
             int queueSize = itemAccess.getQueueSize();
             if (queueSize > 0) {
-                holder.count.setText(String.valueOf(queueSize));
+                holder.count.setText(NumberFormat.getInstance().format(queueSize));
                 holder.count.setVisibility(View.VISIBLE);
             }
         } else if (tag.equals(EpisodesFragment.TAG)) {
             int unreadItems = itemAccess.getNumberOfNewItems();
             if (unreadItems > 0) {
-                holder.count.setText(String.valueOf(unreadItems));
+                holder.count.setText(NumberFormat.getInstance().format(unreadItems));
                 holder.count.setVisibility(View.VISIBLE);
             }
         } else if (tag.equals(SubscriptionFragment.TAG)) {
             int sum = itemAccess.getFeedCounterSum();
             if (sum > 0) {
-                holder.count.setText(String.valueOf(sum));
+                holder.count.setText(NumberFormat.getInstance().format(sum));
                 holder.count.setVisibility(View.VISIBLE);
             }
         } else if(tag.equals(DownloadsFragment.TAG) && UserPreferences.isEnableAutodownload()) {
@@ -295,9 +296,17 @@ public class NavListAdapter extends BaseAdapter
                 .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
         convertView = inflater.inflate(R.layout.nav_section_item, parent, false);
+        TextView feedsFilteredMsg = convertView.findViewById(R.id.nav_feeds_filtered_message);
 
-        convertView.setEnabled(false);
-        convertView.setOnClickListener(null);
+        if (UserPreferences.getSubscriptionsFilter().isEnabled() && showSubscriptionList) {
+            convertView.setEnabled(true);
+            feedsFilteredMsg.setText("{md-info-outline} " + context.getString(R.string.subscriptions_are_filtered));
+            Iconify.addIcons(feedsFilteredMsg);
+            feedsFilteredMsg.setVisibility(View.VISIBLE);
+        } else {
+            convertView.setEnabled(false);
+            feedsFilteredMsg.setVisibility(View.GONE);
+        }
 
         return convertView;
     }
@@ -316,7 +325,7 @@ public class NavListAdapter extends BaseAdapter
             LayoutInflater inflater = (LayoutInflater) context
                     .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
-            convertView = inflater.inflate(R.layout.nav_feedlistitem, parent, false);
+            convertView = inflater.inflate(R.layout.nav_listitem, parent, false);
 
             holder.image = convertView.findViewById(R.id.imgvCover);
             holder.title = convertView.findViewById(R.id.txtvTitle);
@@ -351,7 +360,7 @@ public class NavListAdapter extends BaseAdapter
         int counter = itemAccess.getFeedCounter(feed.getId());
         if(counter > 0) {
             holder.count.setVisibility(View.VISIBLE);
-            holder.count.setText(String.valueOf(counter));
+            holder.count.setText(NumberFormat.getInstance().format(counter));
         } else {
             holder.count.setVisibility(View.GONE);
         }

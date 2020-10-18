@@ -6,6 +6,10 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.SimpleItemAnimator;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -83,7 +87,6 @@ public abstract class EpisodesListFragment extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
-        setHasOptionsMenu(true);
         EventBus.getDefault().register(this);
         loadItems();
     }
@@ -91,6 +94,7 @@ public abstract class EpisodesListFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        setHasOptionsMenu(true);
         registerForContextMenu(recyclerView);
     }
 
@@ -120,18 +124,18 @@ public abstract class EpisodesListFragment extends Fragment {
     }
 
     @Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
         if (!isAdded()) {
             return;
         }
         super.onCreateOptionsMenu(menu, inflater);
         inflater.inflate(R.menu.episodes, menu);
-        MenuItemUtils.setupSearchItem(menu, (MainActivity) getActivity(), 0);
+        MenuItemUtils.setupSearchItem(menu, (MainActivity) getActivity(), 0, "");
         isUpdatingFeeds = MenuItemUtils.updateRefreshMenuItem(menu, R.id.refresh_item, updateRefreshMenuItemChecker);
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if (!super.onOptionsItemSelected(item)) {
             switch (item.getItemId()) {
                 case R.id.refresh_item:
@@ -146,7 +150,8 @@ public abstract class EpisodesListFragment extends Fragment {
                         public void onConfirmButtonPressed(DialogInterface dialog) {
                             dialog.dismiss();
                             DBWriter.markAllItemsRead();
-                            Toast.makeText(getActivity(), R.string.mark_all_read_msg, Toast.LENGTH_SHORT).show();
+                            ((MainActivity) getActivity()).showSnackbarAbovePlayer(
+                                    R.string.mark_all_read_msg, Toast.LENGTH_SHORT);
                         }
                     };
                     markAllReadConfirmationDialog.createNewDialog().show();
@@ -160,7 +165,8 @@ public abstract class EpisodesListFragment extends Fragment {
                         public void onConfirmButtonPressed(DialogInterface dialog) {
                             dialog.dismiss();
                             DBWriter.removeAllNewFlags();
-                            Toast.makeText(getActivity(), R.string.removed_all_new_flags_msg, Toast.LENGTH_SHORT).show();
+                            ((MainActivity) getActivity()).showSnackbarAbovePlayer(
+                                    R.string.removed_all_new_flags_msg, Toast.LENGTH_SHORT);
                         }
                     };
                     removeAllNewFlagsConfirmationDialog.createNewDialog().show();
@@ -174,7 +180,7 @@ public abstract class EpisodesListFragment extends Fragment {
     }
 
     @Override
-    public boolean onContextItemSelected(MenuItem item) {
+    public boolean onContextItemSelected(@NonNull MenuItem item) {
         Log.d(TAG, "onContextItemSelected() called with: " + "item = [" + item + "]");
         if (!getUserVisibleHint()) {
             return false;
@@ -211,6 +217,13 @@ public abstract class EpisodesListFragment extends Fragment {
         if (animator instanceof SimpleItemAnimator) {
             ((SimpleItemAnimator) animator).setSupportsChangeAnimations(false);
         }
+
+        SwipeRefreshLayout swipeRefreshLayout = root.findViewById(R.id.swipeRefresh);
+        swipeRefreshLayout.setOnRefreshListener(() -> {
+            AutoUpdateManager.runImmediate(requireContext());
+            new Handler(Looper.getMainLooper()).postDelayed(() -> swipeRefreshLayout.setRefreshing(false),
+                    getResources().getInteger(R.integer.swipe_to_refresh_duration_in_ms));
+        });
 
         progLoading = root.findViewById(R.id.progLoading);
         progLoading.setVisibility(View.VISIBLE);

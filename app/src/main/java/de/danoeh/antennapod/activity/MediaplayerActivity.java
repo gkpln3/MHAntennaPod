@@ -19,16 +19,23 @@ import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.bumptech.glide.Glide;
+
+import org.apache.commons.lang3.StringUtils;
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
+
+import java.text.NumberFormat;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
-import androidx.arch.core.util.Function;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.ActivityOptionsCompat;
 import androidx.core.content.ContextCompat;
-import androidx.core.util.Consumer;
-import androidx.core.util.Supplier;
-import com.bumptech.glide.Glide;
 import de.danoeh.antennapod.R;
 import de.danoeh.antennapod.core.event.PlaybackPositionEvent;
 import de.danoeh.antennapod.core.feed.FeedItem;
@@ -40,7 +47,6 @@ import de.danoeh.antennapod.core.storage.DBReader;
 import de.danoeh.antennapod.core.storage.DBWriter;
 import de.danoeh.antennapod.core.util.Converter;
 import de.danoeh.antennapod.core.util.FeedItemUtil;
-import de.danoeh.antennapod.core.util.Flavors;
 import de.danoeh.antennapod.core.util.IntentUtils;
 import de.danoeh.antennapod.core.util.ShareUtils;
 import de.danoeh.antennapod.core.util.StorageUtils;
@@ -52,16 +58,13 @@ import de.danoeh.antennapod.core.util.playback.Playable;
 import de.danoeh.antennapod.core.util.playback.PlaybackController;
 import de.danoeh.antennapod.core.util.playback.PlaybackServiceStarter;
 import de.danoeh.antennapod.dialog.PlaybackControlsDialog;
+import de.danoeh.antennapod.dialog.ShareDialog;
 import de.danoeh.antennapod.dialog.SkipPreferenceDialog;
 import de.danoeh.antennapod.dialog.SleepTimerDialog;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
-import org.apache.commons.lang3.StringUtils;
-import org.greenrobot.eventbus.EventBus;
-import org.greenrobot.eventbus.Subscribe;
-import org.greenrobot.eventbus.ThreadMode;
 
 
 /**
@@ -303,7 +306,7 @@ public abstract class MediaplayerActivity extends CastEnabledActivity implements
             return false;
         }
         Playable media = controller.getMedia();
-        boolean isFeedMedia = media != null && (media instanceof FeedMedia);
+        boolean isFeedMedia = (media instanceof FeedMedia);
 
         menu.findItem(R.id.open_feed_item).setVisible(isFeedMedia); // FeedMedia implies it belongs to a Feed
 
@@ -312,13 +315,8 @@ public abstract class MediaplayerActivity extends CastEnabledActivity implements
 
         boolean isItemAndHasLink = isFeedMedia &&
                 ShareUtils.hasLinkToShare(((FeedMedia) media).getItem());
-        menu.findItem(R.id.share_link_item).setVisible(isItemAndHasLink);
-        menu.findItem(R.id.share_link_with_position_item).setVisible(isItemAndHasLink);
 
         boolean isItemHasDownloadLink = isFeedMedia && ((FeedMedia) media).getDownload_url() != null;
-        menu.findItem(R.id.share_download_url_item).setVisible(isItemHasDownloadLink);
-        menu.findItem(R.id.share_download_url_with_position_item).setVisible(isItemHasDownloadLink);
-        menu.findItem(R.id.share_file).setVisible(isFeedMedia && ((FeedMedia) media).fileExists());
 
         menu.findItem(R.id.share_item).setVisible(hasWebsiteLink || isItemAndHasLink || isItemHasDownloadLink);
 
@@ -369,8 +367,6 @@ public abstract class MediaplayerActivity extends CastEnabledActivity implements
                             DBWriter.addFavoriteItem(feedItem);
                             isFavorite = true;
                             invalidateOptionsMenu();
-                            Toast.makeText(this, R.string.added_to_favorites, Toast.LENGTH_SHORT)
-                                 .show();
                         }
                         break;
                     case R.id.remove_from_favorites_item:
@@ -378,8 +374,6 @@ public abstract class MediaplayerActivity extends CastEnabledActivity implements
                             DBWriter.removeFavoriteItem(feedItem);
                             isFavorite = false;
                             invalidateOptionsMenu();
-                            Toast.makeText(this, R.string.removed_from_favorites, Toast.LENGTH_SHORT)
-                                    .show();
                         }
                         break;
                     case R.id.disable_sleeptimer_item: // Fall-through
@@ -387,8 +381,7 @@ public abstract class MediaplayerActivity extends CastEnabledActivity implements
                         new SleepTimerDialog().show(getSupportFragmentManager(), "SleepTimerDialog");
                         break;
                     case R.id.audio_controls:
-                        boolean isPlayingVideo = controller.getMedia().getMediaType() == MediaType.VIDEO;
-                        PlaybackControlsDialog dialog = PlaybackControlsDialog.newInstance(isPlayingVideo);
+                        PlaybackControlsDialog dialog = PlaybackControlsDialog.newInstance();
                         dialog.show(getSupportFragmentManager(), "playback_controls");
                         break;
                     case R.id.open_feed_item:
@@ -400,29 +393,10 @@ public abstract class MediaplayerActivity extends CastEnabledActivity implements
                     case R.id.visit_website_item:
                         IntentUtils.openInBrowser(MediaplayerActivity.this, getWebsiteLinkWithFallback(media));
                         break;
-                    case R.id.share_link_item:
+                    case R.id.share_item:
                         if (feedItem != null) {
-                            ShareUtils.shareFeedItemLink(this, feedItem);
-                        }
-                        break;
-                    case R.id.share_download_url_item:
-                        if (feedItem != null) {
-                            ShareUtils.shareFeedItemDownloadLink(this, feedItem);
-                        }
-                        break;
-                    case R.id.share_link_with_position_item:
-                        if (feedItem != null) {
-                            ShareUtils.shareFeedItemLink(this, feedItem, true);
-                        }
-                        break;
-                    case R.id.share_download_url_with_position_item:
-                        if (feedItem != null) {
-                            ShareUtils.shareFeedItemDownloadLink(this, feedItem, true);
-                        }
-                        break;
-                    case R.id.share_file:
-                        if (media instanceof FeedMedia) {
-                            ShareUtils.shareFeedItemFile(this, ((FeedMedia) media));
+                            ShareDialog shareDialog = ShareDialog.newInstance(feedItem);
+                            shareDialog.show(getSupportFragmentManager(), "ShareEpisodeDialog");
                         }
                         break;
                     default:
@@ -560,13 +534,13 @@ public abstract class MediaplayerActivity extends CastEnabledActivity implements
         butRev = findViewById(R.id.butRev);
         txtvRev = findViewById(R.id.txtvRev);
         if (txtvRev != null) {
-            txtvRev.setText(String.valueOf(UserPreferences.getRewindSecs()));
+            txtvRev.setText(NumberFormat.getInstance().format(UserPreferences.getRewindSecs()));
         }
         butPlay = findViewById(R.id.butPlay);
         butFF = findViewById(R.id.butFF);
         txtvFF = findViewById(R.id.txtvFF);
         if (txtvFF != null) {
-            txtvFF.setText(String.valueOf(UserPreferences.getFastForwardSecs()));
+            txtvFF.setText(NumberFormat.getInstance().format(UserPreferences.getFastForwardSecs()));
         }
         butSkip = findViewById(R.id.butSkip);
 
