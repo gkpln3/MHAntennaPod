@@ -6,10 +6,6 @@
     <color name="grey600">#757575</color>
     <color name="light_gray">#bfbfbf</color>
     <color name="black">#000000</color>
-    <color name="holo_blue_light">#c42935</color>
-    <color name="holo_blue_dark">#f31d2c</color>
-    <color name="download_success_green">#669900</color>
-    <color name="download_failed_red">#CC0000</color>
     <color name="status_progress">#5d4037</color>
     <color name="overlay_dark">#2C2C2C</color>
     <color name="overlay_light">#FFFFFF</color>
@@ -29,10 +25,10 @@
     <color name="highlight_trueblack">#43707070</color>
     <color name="non_square_icon_background">#22777777</color>
 
-    <color name="accent_light">#0078C2</color>
-    <color name="accent_dark">#3D8BFF</color>
-    <color name="icon_background_gradient_start">#0ba2ff</color>
-    <color name="icon_background_gradient_end">#0878ff</color>
+    <color name="accent_light">#c42935</color>
+    <color name="accent_dark">#f31d2c</color>
+    <color name="icon_background_gradient_start">#ffffff</color>
+    <color name="icon_background_gradient_end">#ffffff</color>
 
     <color name="master_switch_background_light">#DDDDDD</color>
     <color name="master_switch_background_dark">#191919</color>

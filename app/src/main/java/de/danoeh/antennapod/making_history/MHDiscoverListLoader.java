@@ -22,12 +22,10 @@ import java.util.List;
 import java.util.Locale;
 
 public class MHDiscoverListLoader {
-    private final Context context;
     private final String TOP_DISCOVER_JSON_URL = "https://firebasestorage.googleapis.com/v0/b/makinghistory-1579519443087.appspot.com/o/mh_discover_feed.json?alt=media";
     private final String ALL_ISRAELI_DISCOVER_JSON_URL = TOP_DISCOVER_JSON_URL;
 
-    public MHDiscoverListLoader(Context context) {
-        this.context = context;
+    public MHDiscoverListLoader() {
     }
 
     public Single<List<PodcastSearchResult>> loadToplist(boolean loadTopOnly) {
@@ -67,8 +65,7 @@ public class MHDiscoverListLoader {
             if (response.isSuccessful()) {
                 return response.body().string();
             }
-            String prefix = context.getString(R.string.error_msg_prefix);
-            throw new IOException(prefix + response);
+            throw new IOException(response.toString());
         }
     }
 

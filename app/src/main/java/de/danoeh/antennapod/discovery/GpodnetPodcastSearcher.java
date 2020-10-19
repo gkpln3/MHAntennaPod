@@ -21,9 +21,9 @@ public class GpodnetPodcastSearcher implements PodcastSearcher {
                         GpodnetPreferences.getHostname());
                 List<GpodnetPodcast> gpodnetPodcasts = service.searchPodcasts(query, 0);
                 List<PodcastSearchResult> results = new ArrayList<>();
-                for (GpodnetPodcast podcast : gpodnetPodcasts) {
-                    results.add(PodcastSearchResult.fromGpodder(podcast));
-                }
+//                for (GpodnetPodcast podcast : gpodnetPodcasts) {
+//                    results.add(PodcastSearchResult.fromGpodder(podcast));
+//                }
                 subscriber.onSuccess(results);
             } catch (GpodnetServiceException e) {
                 e.printStackTrace();

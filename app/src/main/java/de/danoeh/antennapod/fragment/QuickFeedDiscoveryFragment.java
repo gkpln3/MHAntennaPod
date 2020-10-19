@@ -113,7 +113,7 @@ public class QuickFeedDiscoveryFragment extends Fragment implements AdapterView.
         errorView.setVisibility(View.GONE);
         errorRetry.setVisibility(View.INVISIBLE);
 
-        MHDiscoverListLoader loader = new MHDiscoverListLoader(getContext());
+        MHDiscoverListLoader loader = new MHDiscoverListLoader();
         disposable = loader.loadToplist(true)
                 .subscribe(podcasts -> {
                     errorTextView.setVisibility(View.GONE);

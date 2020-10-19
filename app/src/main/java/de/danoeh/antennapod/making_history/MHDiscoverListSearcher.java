@@ -16,8 +16,8 @@ public class MHDiscoverListSearcher implements PodcastSearcher {
     private MHDiscoverListLoader loader;
     private static List<PodcastSearchResult> s_cachedResultsFromDiscover = null;
 
-    public MHDiscoverListSearcher(Context context) {
-        this.loader = new MHDiscoverListLoader(context);
+    public MHDiscoverListSearcher() {
+        this.loader = new MHDiscoverListLoader();
     }
 
     public Single<List<PodcastSearchResult>> search(String query) {
@@ -36,6 +36,20 @@ public class MHDiscoverListSearcher implements PodcastSearcher {
         })
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread());
+    }
+    @Override
+    public Single<String> lookupUrl(String resultUrl) {
+        return null;
+    }
+
+    @Override
+    public boolean urlNeedsLookup(String resultUrl) {
+        return false;
+    }
+
+    @Override
+    public String getName() {
+        return null;
     }
 
     private List<PodcastSearchResult> filterResults(List<PodcastSearchResult> podcastSearchResults, String query)

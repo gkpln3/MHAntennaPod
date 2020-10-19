@@ -124,12 +124,12 @@ public class PodcastSearchResult {
                                        searchHit.getAuthor());
     }
 
-    public static PodcastSearchResult fromGpodder(GpodnetPodcast searchHit) {
-        return new PodcastSearchResult(searchHit.getTitle(),
-                                       searchHit.getLogoUrl(),
-                                       searchHit.getUrl(),
-                                       searchHit.getAuthor());
-    }
+//    public static PodcastSearchResult fromGpodder(GpodnetPodcast searchHit) {
+//        return new PodcastSearchResult(searchHit.getTitle(),
+//                                       searchHit.getLogoUrl(),
+//                                       searchHit.getUrl(),
+//                                       searchHit.getAuthor());
+//    }
 
     public static PodcastSearchResult fromPodcastIndex(JSONObject json) {
         String title = json.optString("title", "");

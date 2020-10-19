@@ -296,7 +296,7 @@ public class CoverFragment extends Fragment {
         LinearLayout mainContainer = getView().findViewById(R.id.cover_fragment);
         LinearLayout textContainer = getView().findViewById(R.id.cover_fragment_text_container);
 
-        LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) imgvCover.getLayoutParams();
+        FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) imgvCover.getLayoutParams();
         LinearLayout.LayoutParams textParams = (LinearLayout.LayoutParams) textContainer.getLayoutParams();
         double ratio = (float) newConfig.screenHeightDp / (float) newConfig.screenWidthDp;
 

@@ -128,14 +128,13 @@ public class MHDiscoverSearchFragment extends Fragment {
             }
             gridView.setVisibility(View.GONE);
             progressBar.setVisibility(View.VISIBLE);
-            MHDiscoverListLoader loader = new MHDiscoverListLoader(getContext());
+            MHDiscoverListLoader loader = new MHDiscoverListLoader();
             disposable = loader.getFeedUrl(podcast)
                     .subscribe(feedUrl -> {
                         progressBar.setVisibility(View.GONE);
                         gridView.setVisibility(View.VISIBLE);
                         Intent intent = new Intent(getActivity(), OnlineFeedViewActivity.class);
                         intent.putExtra(OnlineFeedViewActivity.ARG_FEEDURL, feedUrl);
-                        intent.putExtra(OnlineFeedViewActivity.ARG_TITLE, "iTunes");
                         startActivity(intent);
                     }, error -> {
                         Log.e(TAG, Log.getStackTraceString(error));
@@ -170,7 +169,7 @@ public class MHDiscoverSearchFragment extends Fragment {
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
-        inflater.inflate(R.menu.itunes_search, menu);
+        inflater.inflate(R.menu.search, menu);
         MenuItem searchItem = menu.findItem(R.id.action_search);
         final SearchView sv = (SearchView) MenuItemCompat.getActionView(searchItem);
         sv.setQueryHint(getString(R.string.search_making_history_label));
@@ -214,7 +213,7 @@ public class MHDiscoverSearchFragment extends Fragment {
         txtvEmpty.setVisibility(View.GONE);
         progressBar.setVisibility(View.VISIBLE);
 
-        MHDiscoverListLoader loader = new MHDiscoverListLoader(getContext());
+        MHDiscoverListLoader loader = new MHDiscoverListLoader();
         disposable = loader.loadToplist(false)
                 .subscribe(podcasts -> {
                     progressBar.setVisibility(View.GONE);
@@ -240,7 +239,7 @@ public class MHDiscoverSearchFragment extends Fragment {
         txtvEmpty.setVisibility(View.GONE);
         progressBar.setVisibility(View.VISIBLE);
 
-        MHDiscoverListSearcher searcher = new MHDiscoverListSearcher(getContext());
+        MHDiscoverListSearcher searcher = new MHDiscoverListSearcher();
         disposable = searcher.search(query).subscribe(podcasts -> {
             progressBar.setVisibility(View.GONE);
             updateData(podcasts);

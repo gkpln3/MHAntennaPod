@@ -1,6 +1,7 @@
 package de.danoeh.antennapod.discovery;
 
 
+import de.danoeh.antennapod.making_history.MHDiscoverListSearcher;
 import io.reactivex.Single;
 
 import java.util.ArrayList;
@@ -15,6 +16,7 @@ public class PodcastSearcherRegistry {
     public static List<SearcherInfo> getSearchProviders() {
         if (searchProviders == null) {
             searchProviders = new ArrayList<>();
+            searchProviders.add(new SearcherInfo(new MHDiscoverListSearcher(), 2.f));
             searchProviders.add(new SearcherInfo(new CombinedSearcher(), 1.f));
             searchProviders.add(new SearcherInfo(new ItunesPodcastSearcher(), 1.f));
             searchProviders.add(new SearcherInfo(new FyydPodcastSearcher(), 1.f));
