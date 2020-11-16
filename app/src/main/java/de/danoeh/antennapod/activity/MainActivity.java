@@ -2,11 +2,9 @@ package de.danoeh.antennapod.activity;
 
 import android.annotation.TargetApi;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
-import android.content.res.Resources;
 import android.media.AudioManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -14,12 +12,11 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.util.TypedValue;
 import android.view.KeyEvent;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
@@ -38,11 +35,7 @@ import com.bumptech.glide.Glide;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.snackbar.Snackbar;
 import de.danoeh.antennapod.R;
-import de.danoeh.antennapod.core.asynctask.FeedRemover;
-import de.danoeh.antennapod.core.dialog.ConfirmationDialog;
 import de.danoeh.antennapod.core.event.MessageEvent;
-import de.danoeh.antennapod.core.feed.Feed;
-import de.danoeh.antennapod.core.preferences.PlaybackPreferences;
 import de.danoeh.antennapod.core.preferences.UserPreferences;
 import de.danoeh.antennapod.core.receiver.MediaButtonReceiver;
 import de.danoeh.antennapod.core.service.playback.PlaybackService;
@@ -50,7 +43,6 @@ import de.danoeh.antennapod.core.util.StorageUtils;
 import de.danoeh.antennapod.core.util.ThemeUtils;
 import de.danoeh.antennapod.core.util.download.AutoUpdateManager;
 import de.danoeh.antennapod.dialog.RatingDialog;
-import de.danoeh.antennapod.dialog.RenameFeedDialog;
 import de.danoeh.antennapod.fragment.AddFeedFragment;
 import de.danoeh.antennapod.fragment.AudioPlayerFragment;
 import de.danoeh.antennapod.fragment.DownloadsFragment;
@@ -61,7 +53,6 @@ import de.danoeh.antennapod.fragment.PlaybackHistoryFragment;
 import de.danoeh.antennapod.fragment.QueueFragment;
 import de.danoeh.antennapod.fragment.SubscriptionFragment;
 import de.danoeh.antennapod.fragment.TransitionEffect;
-import de.danoeh.antennapod.making_history.MHDefaultFeedLoader;
 import de.danoeh.antennapod.preferences.PreferenceUpgrader;
 import de.danoeh.antennapod.view.LockableBottomSheetBehavior;
 import org.apache.commons.lang3.ArrayUtils;
@@ -122,15 +113,6 @@ public class MainActivity extends CastEnabledActivity {
         setNavDrawerSize();
 
         final FragmentManager fm = getSupportFragmentManager();
-        fm.addOnBackStackChangedListener(() -> {
-            boolean showArrow = fm.getBackStackEntryCount() != 0;
-            if (drawerToggle != null) { // Tablet layout does not have a drawer
-                drawerToggle.setDrawerIndicatorEnabled(!showArrow);
-            } else if (getActionBar() != null) {
-                getActionBar().setDisplayHomeAsUpEnabled(showArrow);
-            }
-        });
-
         if (fm.findFragmentByTag(MAIN_FRAGMENT_TAG) == null) {
             String lastFragment = NavDrawerFragment.getLastNavFragment(this);
             if (ArrayUtils.contains(NavDrawerFragment.NAV_DRAWER_TAGS, lastFragment)) {
@@ -195,6 +177,9 @@ public class MainActivity extends CastEnabledActivity {
         public void onSlide(@NonNull View view, float slideOffset) {
             AudioPlayerFragment audioPlayer = (AudioPlayerFragment) getSupportFragmentManager()
                     .findFragmentByTag(AudioPlayerFragment.TAG);
+            if (audioPlayer == null) {
+                return;
+            }
             float condensedSlideOffset = Math.max(0.0f, Math.min(0.2f, slideOffset - 0.2f)) / 0.2f;
             audioPlayer.getExternalPlayerHolder().setAlpha(1 - condensedSlideOffset);
             audioPlayer.getExternalPlayerHolder().setVisibility(
@@ -202,8 +187,7 @@ public class MainActivity extends CastEnabledActivity {
         }
     };
 
-    @Override
-    public void setSupportActionBar(@Nullable Toolbar toolbar) {
+    public void setupToolbarToggle(@Nullable Toolbar toolbar) {
         if (drawerLayout != null) { // Tablet layout does not have a drawer
             drawerLayout.removeDrawerListener(drawerToggle);
             drawerToggle = new ActionBarDrawerToggle(this, drawerLayout, toolbar,
@@ -211,12 +195,13 @@ public class MainActivity extends CastEnabledActivity {
             drawerLayout.addDrawerListener(drawerToggle);
             drawerToggle.syncState();
             drawerToggle.setDrawerIndicatorEnabled(getSupportFragmentManager().getBackStackEntryCount() == 0);
+            drawerToggle.setToolbarNavigationClickListener(v -> getSupportFragmentManager().popBackStack());
         } else if (getSupportFragmentManager().getBackStackEntryCount() == 0) {
             toolbar.setNavigationIcon(null);
         } else {
             toolbar.setNavigationIcon(ThemeUtils.getDrawableFromAttr(this, R.attr.homeAsUpIndicator));
+            toolbar.setNavigationOnClickListener(v -> getSupportFragmentManager().popBackStack());
         }
-        super.setSupportActionBar(toolbar);
     }
 
     private void checkFirstLaunch() {
@@ -451,7 +436,6 @@ public class MainActivity extends CastEnabledActivity {
         }
     }
 
-
     @Override
     public void onBackPressed() {
         if (isDrawerOpen()) {
@@ -562,6 +546,11 @@ public class MainActivity extends CastEnabledActivity {
     //Hardware keyboard support
     @Override
     public boolean onKeyUp(int keyCode, KeyEvent event) {
+        View currentFocus = getCurrentFocus();
+        if (currentFocus instanceof EditText) {
+            return super.onKeyUp(keyCode, event);
+        }
+
         AudioManager audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
         Integer customKeyCode = null;
 

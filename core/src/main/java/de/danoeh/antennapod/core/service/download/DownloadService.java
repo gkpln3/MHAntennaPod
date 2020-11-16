@@ -205,8 +205,7 @@ public class DownloadService extends Service {
         isRunning = false;
 
         boolean showAutoDownloadReport = UserPreferences.showAutoDownloadReport();
-        if (ClientConfig.downloadServiceCallbacks.shouldCreateReport()
-                && (UserPreferences.showDownloadReport() || showAutoDownloadReport)) {
+        if (UserPreferences.showDownloadReport() || showAutoDownloadReport) {
             notificationManager.updateReport(reportQueue, showAutoDownloadReport);
             reportQueue.clear();
         }
@@ -219,9 +218,9 @@ public class DownloadService extends Service {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        cancelNotificationUpdater();
         syncExecutor.shutdown();
         schedExecutor.shutdown();
-        cancelNotificationUpdater();
         if (downloadPostFuture != null) {
             downloadPostFuture.cancel(true);
         }
@@ -429,7 +428,7 @@ public class DownloadService extends Service {
                 + ", cleanupMedia=" + cleanupMedia);
 
         if (cleanupMedia) {
-            ClientConfig.dbTasksCallbacks.getEpisodeCacheCleanupAlgorithm()
+            UserPreferences.getEpisodeCleanupAlgorithm()
                     .makeRoomForEpisodes(getApplicationContext(), requests.size());
         }
 
@@ -640,6 +639,7 @@ public class DownloadService extends Service {
             if (n != null) {
                 NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
                 nm.notify(R.id.notification_downloading, n);
+                Log.d(TAG, "Download progress notification was posted");
             }
         }
     }

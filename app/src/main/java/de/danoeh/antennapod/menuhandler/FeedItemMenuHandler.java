@@ -78,7 +78,7 @@ public class FeedItemMenuHandler {
             setItemVisibility(menu, R.id.reset_position, false);
         }
 
-        if(!UserPreferences.isEnableAutodownload() || fileDownloaded) {
+        if (!UserPreferences.isEnableAutodownload() || fileDownloaded || selectedItem.getFeed().isLocalFeed()) {
             setItemVisibility(menu, R.id.activate_auto_download, false);
             setItemVisibility(menu, R.id.deactivate_auto_download, false);
         } else if (selectedItem.getAutoDownload()) {
@@ -101,6 +101,11 @@ public class FeedItemMenuHandler {
         setItemVisibility(menu, R.id.remove_from_favorites_item, isFavorite);
 
         setItemVisibility(menu, R.id.remove_item, fileDownloaded);
+
+        if (selectedItem.getFeed().isLocalFeed()) {
+            setItemVisibility(menu, R.id.visit_website_item, false);
+            setItemVisibility(menu, R.id.share_item, false);
+        }
 
         return true;
     }

@@ -74,10 +74,10 @@ project.ext {
 
     // Google Play build
     wearableSupportVersion = "2.6.0"
-
+    
     // Making History firebase
     firebaseVersion = "17.2.2"
-
+    
     //Tests
     awaitilityVersion = "3.1.6"
     robotiumSoloVersion = "5.6.3"

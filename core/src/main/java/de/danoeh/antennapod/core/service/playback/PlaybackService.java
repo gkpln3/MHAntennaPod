@@ -37,6 +37,7 @@ import android.util.Log;
 import android.util.Pair;
 import android.view.KeyEvent;
 import android.view.SurfaceHolder;
+import android.webkit.URLUtil;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
@@ -47,8 +48,6 @@ import com.google.firebase.analytics.FirebaseAnalytics;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
 import de.danoeh.antennapod.core.ClientConfig;
@@ -523,25 +522,37 @@ public class PlaybackService extends MediaBrowserServiceCompat {
                 if (allowStreamAlways) {
                     UserPreferences.setAllowMobileStreaming(true);
                 }
-                if (stream && !NetworkUtils.isStreamingAllowed() && !allowStreamThisTime) {
+                boolean localFeed = URLUtil.isContentUrl(playable.getStreamUrl());
+                if (stream && !NetworkUtils.isStreamingAllowed() && !allowStreamThisTime && !localFeed) {
                     displayStreamingNotAllowedNotification(intent);
                     PlaybackPreferences.writeNoMediaPlaying();
                     stateManager.stopService();
                     return Service.START_NOT_STICKY;
                 }
-                if (playable instanceof FeedMedia) {
-                    playable = DBReader.getFeedMedia(((FeedMedia) playable).getId());
-                }
-                if (playable == null) {
-                    Log.d(TAG, "Playable was not found. Stopping service.");
-                    stateManager.stopService();
-                    return Service.START_NOT_STICKY;
-                }
-                mediaPlayer.playMediaObject(playable, stream, startWhenPrepared, prepareImmediately);
 
-                // Log the start of episode.
-                mMakingHistoryAnalytics.reportStartOfPlayback(playable);
-                addPlayableToQueue(playable);
+                Observable.fromCallable(
+                        () -> {
+                            if (playable instanceof FeedMedia) {
+                                return DBReader.getFeedMedia(((FeedMedia) playable).getId());
+                            } else {
+                                return playable;
+                            }
+                        })
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(
+                                playableLoaded -> {
+                                    mediaPlayer.playMediaObject(playableLoaded, stream, startWhenPrepared,
+                                            prepareImmediately);
+                                    // Log the start of episode.
+                                    mMakingHistoryAnalytics.reportStartOfPlayback(playableLoaded);
+                                    addPlayableToQueue(playableLoaded);
+                                }, error -> {
+                                    Log.d(TAG, "Playable was not found. Stopping service.");
+                                    error.printStackTrace();
+                                    stateManager.stopService();
+                                });
+                return Service.START_NOT_STICKY;
             } else {
                 Log.d(TAG, "Did not handle intent to PlaybackService: " + intent);
                 Log.d(TAG, "Extras: " + intent.getExtras());
@@ -610,7 +621,7 @@ public class PlaybackService extends MediaBrowserServiceCompat {
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setContentIntent(pendingIntentAllowThisTime)
                 .addAction(R.drawable.ic_stream_white,
-                        getString(R.string.stream_label),
+                        getString(R.string.confirm_mobile_streaming_button_once),
                         pendingIntentAllowThisTime)
                 .addAction(R.drawable.ic_stream_white,
                         getString(R.string.confirm_mobile_streaming_button_always),
@@ -667,7 +678,9 @@ public class PlaybackService extends MediaBrowserServiceCompat {
                 }
                 return false;
             case KeyEvent.KEYCODE_MEDIA_NEXT:
-                if (notificationButton || UserPreferences.shouldHardwareButtonSkip()) {
+                if (getStatus() != PlayerStatus.PLAYING && getStatus() != PlayerStatus.PAUSED) {
+                    return false;
+                } else if (notificationButton || UserPreferences.shouldHardwareButtonSkip()) {
                     // assume the skip command comes from a notification or the lockscreen
                     // a >| skip button should actually skip
                     mediaPlayer.skip();
@@ -678,10 +691,15 @@ public class PlaybackService extends MediaBrowserServiceCompat {
                 }
                 return true;
             case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
-                seekDelta(UserPreferences.getFastForwardSecs() * 1000);
-                return true;
+                if (getStatus() == PlayerStatus.PLAYING || getStatus() == PlayerStatus.PAUSED) {
+                    mediaPlayer.seekDelta(UserPreferences.getFastForwardSecs() * 1000);
+                    return true;
+                }
+                return false;
             case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
-                if (UserPreferences.shouldHardwarePreviousButtonRestart()) {
+                if (getStatus() != PlayerStatus.PLAYING && getStatus() != PlayerStatus.PAUSED) {
+                    return false;
+                } else if (UserPreferences.shouldHardwarePreviousButtonRestart()) {
                     // user wants to restart current episode
                     mediaPlayer.seekTo(0);
                 } else {
@@ -690,7 +708,11 @@ public class PlaybackService extends MediaBrowserServiceCompat {
                 }
                 return true;
             case KeyEvent.KEYCODE_MEDIA_REWIND:
-                seekDelta(-UserPreferences.getRewindSecs() * 1000);
+                if (getStatus() == PlayerStatus.PLAYING || getStatus() == PlayerStatus.PAUSED) {
+                    mediaPlayer.seekDelta(-UserPreferences.getRewindSecs() * 1000);
+                } else {
+                    return false;
+                }
                 return true;
             case KeyEvent.KEYCODE_MEDIA_STOP:
                 if (status == PlayerStatus.PLAYING) {
@@ -710,26 +732,34 @@ public class PlaybackService extends MediaBrowserServiceCompat {
     }
 
     private void startPlayingFromPreferences() {
-        Playable playable = Playable.PlayableUtils.createInstanceFromPreferences(getApplicationContext());
-        if (playable != null) {
-            if (PlaybackPreferences.getCurrentEpisodeIsStream() && !NetworkUtils.isStreamingAllowed()) {
-                displayStreamingNotAllowedNotification(
-                        new PlaybackServiceStarter(this, playable)
-                                .prepareImmediately(true)
-                                .startWhenPrepared(true)
-                                .shouldStream(true)
-                                .getIntent());
-                PlaybackPreferences.writeNoMediaPlaying();
-                stateManager.stopService();
-                return;
-            }
-            mediaPlayer.playMediaObject(playable, PlaybackPreferences.getCurrentEpisodeIsStream(), true, true);
-            stateManager.validStartCommandWasReceived();
-            PlaybackService.this.updateMediaSessionMetadata(playable);
-            addPlayableToQueue(playable);
-        } else {
-            stateManager.stopService();
-        }
+        Observable.fromCallable(() -> Playable.PlayableUtils.createInstanceFromPreferences(getApplicationContext()))
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        playable -> {
+                            boolean localFeed = URLUtil.isContentUrl(playable.getStreamUrl());
+                            if (PlaybackPreferences.getCurrentEpisodeIsStream()
+                                    && !NetworkUtils.isStreamingAllowed() && !localFeed) {
+                                displayStreamingNotAllowedNotification(
+                                        new PlaybackServiceStarter(this, playable)
+                                                .prepareImmediately(true)
+                                                .startWhenPrepared(true)
+                                                .shouldStream(true)
+                                                .getIntent());
+                                PlaybackPreferences.writeNoMediaPlaying();
+                                stateManager.stopService();
+                                return;
+                            }
+                            mediaPlayer.playMediaObject(playable, PlaybackPreferences.getCurrentEpisodeIsStream(),
+                                    true, true);
+                            stateManager.validStartCommandWasReceived();
+                            PlaybackService.this.updateMediaSessionMetadata(playable);
+                            addPlayableToQueue(playable);
+                        }, error -> {
+                            Log.d(TAG, "Playable was not loaded from preferences. Stopping service.");
+                            error.printStackTrace();
+                            stateManager.stopService();
+                        });
     }
 
     /**
@@ -973,10 +1003,6 @@ public class PlaybackService extends MediaBrowserServiceCompat {
             Log.d(TAG, "getNextInQueue(), but playable not an instance of FeedMedia, so not proceeding");
             return null;
         }
-        if (!ClientConfig.playbackServiceCallbacks.useQueue()) {
-            Log.d(TAG, "getNextInQueue(), but queue not in use by this app");
-            return null;
-        }
         Log.d(TAG, "getNextInQueue()");
         FeedMedia media = (FeedMedia) currentMedia;
         try {
@@ -1004,7 +1030,7 @@ public class PlaybackService extends MediaBrowserServiceCompat {
         }
 
         if (!nextItem.getMedia().localFileAvailable() && !NetworkUtils.isStreamingAllowed()
-                && UserPreferences.isFollowQueue()) {
+                && UserPreferences.isFollowQueue() && !nextItem.getFeed().isLocalFeed()) {
             displayStreamingNotAllowedNotification(
                     new PlaybackServiceStarter(this, nextItem.getMedia())
                     .prepareImmediately(true)
@@ -1085,6 +1111,12 @@ public class PlaybackService extends MediaBrowserServiceCompat {
             Log.d(TAG, "smart mark as played");
         }
 
+        boolean autoSkipped = false;
+        if (autoSkippedFeedMediaId != null && autoSkippedFeedMediaId.equals(item.getIdentifyingValue())) {
+            autoSkippedFeedMediaId = null;
+            autoSkipped = true;
+        }
+
         if (ended || smartMarkAsPlayed) {
             media.onPlaybackCompleted(getApplicationContext());
         } else {
@@ -1097,6 +1129,7 @@ public class PlaybackService extends MediaBrowserServiceCompat {
 
         if (item != null) {
             if (ended || smartMarkAsPlayed
+                    || autoSkipped
                     || (skipped && !UserPreferences.shouldSkipKeepEpisode())) {
                 // only mark the item as played if we're not keeping it anyways
                 DBWriter.markItemPlayed(item, FeedItem.PLAYED, ended);
@@ -1148,7 +1181,7 @@ public class PlaybackService extends MediaBrowserServiceCompat {
         FeedPreferences preferences = feedMedia.getItem().getFeed().getPreferences();
         int skipEnd = preferences.getFeedSkipEnding();
         if (skipEnd > 0
-                && skipEnd < getDuration()
+                && skipEnd * 1000 < getDuration()
                 && (remainingTime - (skipEnd * 1000) > 0)
                 && ((remainingTime - skipEnd * 1000) < (getCurrentPlaybackSpeed() * 1000))) {
             Log.d(TAG, "skipEndingIfNecessary: Skipping the remaining " + remainingTime + " " + skipEnd * 1000 + " speed " + getCurrentPlaybackSpeed());
@@ -1157,7 +1190,7 @@ public class PlaybackService extends MediaBrowserServiceCompat {
             Toast toast = Toast.makeText(context, skipMesg, Toast.LENGTH_LONG);
             toast.show();
 
-            this.autoSkippedFeedMediaId = feedMedia.getItem().getId();
+            this.autoSkippedFeedMediaId = feedMedia.getItem().getIdentifyingValue();
             mediaPlayer.skip();
         }
    }

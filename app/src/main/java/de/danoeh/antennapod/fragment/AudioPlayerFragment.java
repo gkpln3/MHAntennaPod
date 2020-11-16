@@ -264,7 +264,6 @@ public class AudioPlayerFragment extends Fragment implements
                 .subscribe(media -> updateUi((Playable) media),
                         error -> Log.e(TAG, Log.getStackTraceString(error)),
                         () -> updateUi(null));
-
     }
 
     private PlaybackController newPlaybackController() {

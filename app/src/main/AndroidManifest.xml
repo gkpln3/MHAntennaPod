@@ -28,7 +28,8 @@
 
     <application
         android:name="de.danoeh.antennapod.PodcastApp"
-        android:icon="@drawable/ic_launcher"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:label="@string/app_name"
         android:backupAgent=".core.backup.OpmlBackupAgent"
         android:restoreAnyVersion="true"
@@ -333,15 +334,6 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/provider_paths"/>
         </provider>
-        
-        <provider
-            android:authorities="${applicationId}"
-            android:name="de.danoeh.antennapod.PodcastApp"
-            />
-
-        <meta-data
-                    android:name="com.google.android.gms.car.application"
-                    android:resource="@xml/automotive_app_desc"/>
     </application>
 
 </manifest>

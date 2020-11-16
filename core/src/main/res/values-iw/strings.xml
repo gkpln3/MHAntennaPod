@@ -288,7 +288,7 @@
   <string name="no_media_playing_label">אין מדיה מתנגנת</string>
   <string name="player_buffering_msg">המטמון מתמלא</string>
   <string name="player_go_to_picture_in_picture">מצב תמונה בתוך תמונה</string>
-  <string name="unknown_media_key">אנטנה־פּוֹד - מפתח מדיה לא ידוע: %1$d</string>
+  <string name="unknown_media_key">עושים היסטוריה - מפתח מדיה לא ידוע: %1$d</string>
   <string name="error_file_not_found">הקובץ לא נמצא</string>
   <!--Queue operations-->
   <string name="lock_queue">נעילת תור</string>
@@ -412,7 +412,7 @@
   <string name="pref_nav_drawer_feed_order_sum">שינוי סדר המינויים שלך</string>
   <string name="pref_nav_drawer_feed_counter_title">הגדרת מונה מינויים</string>
   <string name="pref_nav_drawer_feed_counter_sum">שינוי המידע שמוצג במונה המינויים. משפיע גם על סדר המינויים אם ‚סדר המינויים’ מוגדר כ־‚מונה’.</string>
-  <string name="pref_set_theme_sum">שינוי המראה של אנטנה־פּוֹד</string>
+  <string name="pref_set_theme_sum">שינוי המראה של עושים היסטוריה</string>
   <string name="pref_automatic_download_title">הורדה אוטומטית</string>
   <string name="pref_automatic_download_sum">הגדרת הורדה אטומטית של פרקים.</string>
   <string name="pref_autodl_wifi_filter_title">הפעלת סינון רשתות אלחוטיות</string>
@@ -500,7 +500,7 @@
   <string name="pref_no_browser_found">לא נמצא דפדפן.</string>
   <string name="pref_cast_title">תמיכה ב־Chromecast</string>
   <string name="pref_cast_message_play_flavor">הפעלת תמיכה בנגינת מדיה על התקני שידור מרוחקים (כגון Chromecast, רמקולים דיגיטליים או Android TV)</string>
-  <string name="pref_cast_message_free_flavor">לתמיכה ב־Chromecast נדרשות ספריות קנייניות מאת צד־שלישי שמושבתות בגרסה זו של אנטנה־פּוֹד</string>
+  <string name="pref_cast_message_free_flavor">לתמיכה ב־Chromecast נדרשות ספריות קנייניות מאת צד־שלישי שמושבתות בגרסה זו של עושים היסטוריה</string>
   <string name="pref_enqueue_downloaded_title">הוספת הורדות לתור</string>
   <string name="pref_enqueue_downloaded_summary">הוספת פרקים שהתקבלו לתור</string>
   <string name="media_player_builtin">הנגן המובנה ב־Android</string>
@@ -518,7 +518,7 @@
   <string name="back_button_open_drawer">פתיחת מגירת ניווט</string>
   <string name="back_button_double_tap">לחיצה כפולה ליציאה</string>
   <string name="back_button_show_prompt">אישור ליציאה</string>
-  <string name="close_prompt">לסגור את אנטנה־פּוֹד?</string>
+  <string name="close_prompt">לסגור את עושים היסטוריה?</string>
   <string name="double_tap_toast">יש לגעת בכפתור החזרה שוב כדי לצאת</string>
   <string name="back_button_go_to_page">מעבר לעמוד…</string>
   <string name="back_button_go_to_page_title">בחירת עמוד</string>
@@ -526,15 +526,15 @@
   <string name="pref_delete_removes_from_queue_sum">הסרת פרק מהתור אוטומטית עם מחיקתו.</string>
   <!--About screen-->
   <string name="about_pref">על אודות</string>
-  <string name="antennapod_version">גרסת אנטנה־פּוֹד</string>
+  <string name="antennapod_version">גרסת עושים היסטוריה</string>
   <string name="contributors">מתנדבים</string>
-  <string name="contributors_summary">כל אחד ואחת יכולים לסייע בשיפור AntennaPod באמצעות תרומת קוד, תרגום או באמצעות סיוע למשתמשים שלנו בפורום</string>
+  <string name="contributors_summary">כל אחד ואחת יכולים לסייע בשיפור עושים היסטוריה באמצעות תרומת קוד, תרגום או באמצעות סיוע למשתמשים שלנו בפורום</string>
   <string name="developers">מפתחים</string>
   <string name="translators">מתרגמים</string>
   <string name="special_thanks">תודות מיוחדות</string>
   <string name="privacy_policy">מדיניות פרטיות</string>
   <string name="licenses">רישיונות</string>
-  <string name="licenses_summary">היישומון אנטנה־פּוֹד משתמש בתכניות נהדרות נוספות</string>
+  <string name="licenses_summary">היישומון עושים היסטוריה משתמש בתכניות נהדרות נוספות</string>
   <!--Search-->
   <string name="search_status_no_results">לא נמצאו תוצאות</string>
   <string name="search_label">חיפוש</string>
@@ -555,8 +555,8 @@
   <string name="html_export_summary">הצגת המינויים שלך לחבר</string>
   <string name="opml_export_summary">העברת המינויים שלך ליישומון פודקאסטים אחר</string>
   <string name="opml_import_summary">ייבוא המינויים שלך מיישומון פודקאסטים אחר</string>
-  <string name="database_export_summary">העברת מינויים, פרקים להם האזנת ותור נגינה לאנטנה־פ‎וֹד במכשיר אחר</string>
-  <string name="database_import_summary">ייבוא מסד הנתונים של אנטנה־פ‎וֹד ממכשיר אחר</string>
+  <string name="database_export_summary">העברת מינויים, פרקים להם האזנת ותור נגינה עושים היסטוריה במכשיר אחר</string>
+  <string name="database_import_summary">ייבוא מסד הנתונים של עושים היסטוריה ממכשיר אחר</string>
   <string name="opml_import_label">ייבוא OPML</string>
   <string name="opml_reader_error">אירעה שגיאה בעת קריאת מסמך ה־OPML:</string>
   <string name="opml_import_error_no_file">לא נבחר קובץ!</string>
@@ -573,8 +573,8 @@
   <string name="export_success_sum">הקובץ שייוצא נכתב אל:\n\n%1$s</string>
   <string name="opml_import_ask_read_permission">נדרשת גישה לאחסון חיצוני כדי לקרוא את קובץ ה־OPML</string>
   <string name="import_select_file">בחירת קובץ לייבוא</string>
-  <string name="import_ok">הייבוא הצליח.\n\nנא ללחוץ על אישור כדי להפעיל את אנטנה־פּוֹד מחדש</string>
-  <string name="import_no_downgrade">מסד נתונים זה ייוצא עם גרסה עדכנית יותר של אנטנה־פ‎וֹד</string>
+  <string name="import_ok">הייבוא הצליח.\n\nנא ללחוץ על אישור כדי להפעיל את עושים היסטוריה מחדש</string>
+  <string name="import_no_downgrade">מסד נתונים זה ייוצא עם גרסה עדכנית יותר של עושים היסטוריה</string>
   <string name="favorites_export_label">ייצוא מועדפים</string>
   <string name="favorites_export_summary">ייצור המועדפים השמורים לקובץ</string>
   <!--Sleep timer-->
@@ -629,7 +629,7 @@
   <string name="gpodnetauth_device_caption_errorEmpty">הכותרת לא יכולה להישאר ריקה</string>
   <string name="gpodnetauth_device_butChoose">בחירה</string>
   <string name="gpodnetauth_finish_title">נכנסת בהצלחה!</string>
-  <string name="gpodnetauth_finish_descr">מזל טוב! חשבון ה־gpodder.net שלך מקושר כעת עם המכשיר שלך. מעתה כל המינויים שלך יסונכרנו אוטומטית על ידי אנטנה־פּוֹד מהמכשיר שלך לחשבון ה־gpodder.net שלך.</string>
+  <string name="gpodnetauth_finish_descr">מזל טוב! חשבון ה־gpodder.net שלך מקושר כעת עם המכשיר שלך. מעתה כל המינויים שלך יסונכרנו אוטומטית על ידי עושים היסטוריה מהמכשיר שלך לחשבון ה־gpodder.net שלך.</string>
   <string name="gpodnetauth_finish_butsyncnow">התחלת סנכרון כעת</string>
   <string name="gpodnetauth_finish_butgomainscreen">מעבר למסך הראשי</string>
   <string name="gpodnetsync_auth_error_title">שגיאת אימות מול gpodder.net</string>
@@ -643,7 +643,7 @@
   <string name="selected_folder_label">תיקייה נבחרת:</string>
   <string name="create_folder_label">יצירת תיקייה</string>
   <string name="choose_data_directory">בחר תיקיית מידע</string>
-  <string name="choose_data_directory_message">נא לבחור את בסיס תיקיית הנתונים שלך. תת־התיקיות תיווצרנה על ידי אנטנה־פּוֹד בהתאם.</string>
+  <string name="choose_data_directory_message">נא לבחור את בסיס תיקיית הנתונים שלך. תת־התיקיות תיווצרנה על ידי עושים היסטוריה בהתאם.</string>
   <string name="choose_data_directory_permission_rationale">נדרשת גישה לאחסון חיצוני כדי לשנות את תיקיית הנתונים</string>
   <string name="choose_data_directory_available_space">%1$s מתוך %2$s פנויים</string>
   <string name="create_folder_msg">ליצור תיקייה חדשה בשם „%1$s”?</string>
@@ -661,7 +661,7 @@
   <string name="pref_pausePlaybackForFocusLoss_title">להשהות במהלך הפרעות</string>
   <string name="pref_resumeAfterCall_sum">להמשיך בנגינה לאחר השלמת שיחת הטלפון</string>
   <string name="pref_resumeAfterCall_title">להמשיך לאחר שיחה</string>
-  <string name="pref_restart_required">יש להפעיל את אנטנה־פּוֹד מחדש כדי שהשינויים ייכנסו לתוקף.</string>
+  <string name="pref_restart_required">יש להפעיל את עושים היסטוריה מחדש כדי שהשינויים ייכנסו לתוקף.</string>
   <!--Online feed view-->
   <string name="subscribe_label">הרשמה</string>
   <string name="subscribing_label">מתבצע רישום…</string>
@@ -694,7 +694,7 @@
   <string name="episode_filters_hint">מילים בודדות \n\"אוסף מילים\"</string>
   <string name="keep_updated">לשמור על עדכניות</string>
   <string name="keep_updated_summary">לכלול את הפודקאסט בעת רענון (אוטומטי) של כל הפודקאסטים</string>
-  <string name="auto_download_disabled_globally">הורדה אוטומטית מושבתת בהגדרות הראשיות של אנטנה־פּוֹד</string>
+  <string name="auto_download_disabled_globally">הורדה אוטומטית מושבתת בהגדרות הראשיות של עושים היסטוריה</string>
   <!--Progress information-->
   <string name="progress_upgrading_database">מסד הנתונים משתדרג</string>
   <!--AntennaPodSP-->
@@ -702,7 +702,6 @@
   <!--Add podcast fragment-->
   <string name="search_podcast_hint">חיפוש פודקאסט…</string>
   <string name="search_itunes_label">חיפוש ב־iTunes</string>
-  <string name="search_making_history_label">חיפוש</string>
   <string name="search_fyyd_label">בחיפוש ב־fyyd</string>
   <string name="advanced">מתקדם</string>
   <string name="add_podcast_by_url">הוספת פודקאסט לפי כתובת</string>

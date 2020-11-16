@@ -9,7 +9,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.widget.ProgressBar;
 import androidx.annotation.StringRes;
-import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
@@ -28,6 +28,7 @@ import android.widget.TextView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.joanzapata.iconify.Iconify;
 
+import java.util.Locale;
 import java.util.concurrent.Callable;
 
 import de.danoeh.antennapod.R;
@@ -66,11 +67,17 @@ import org.greenrobot.eventbus.ThreadMode;
 /**
  * Fragment for displaying feed subscriptions
  */
-public class SubscriptionFragment extends Fragment {
+public class SubscriptionFragment extends Fragment implements Toolbar.OnMenuItemClickListener {
 
     public static final String TAG = "SubscriptionFragment";
     private static final String PREFS = "SubscriptionFragment";
     private static final String PREF_NUM_COLUMNS = "columns";
+    private static final int MIN_NUM_COLUMNS = 2;
+    private static final int[] COLUMN_CHECKBOX_IDS = {
+            R.id.subscription_num_columns_2,
+            R.id.subscription_num_columns_3,
+            R.id.subscription_num_columns_4,
+            R.id.subscription_num_columns_5};
 
     private GridView subscriptionGridLayout;
     private DBReader.NavDrawerData navDrawerData;
@@ -79,6 +86,7 @@ public class SubscriptionFragment extends Fragment {
     private ProgressBar progressBar;
     private EmptyViewHandler emptyView;
     private TextView feedsFilteredMsg;
+    private Toolbar toolbar;
 
     private int mPosition = -1;
     private boolean isUpdatingFeeds = false;
@@ -90,7 +98,6 @@ public class SubscriptionFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setRetainInstance(true);
-        setHasOptionsMenu(true);
 
         prefs = requireActivity().getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }
@@ -99,7 +106,17 @@ public class SubscriptionFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.fragment_subscriptions, container, false);
-        ((AppCompatActivity) getActivity()).setSupportActionBar(root.findViewById(R.id.toolbar));
+        toolbar = root.findViewById(R.id.toolbar);
+        toolbar.setOnMenuItemClickListener(this);
+        ((MainActivity) getActivity()).setupToolbarToggle(toolbar);
+        toolbar.inflateMenu(R.menu.subscriptions);
+        for (int i = 0; i < COLUMN_CHECKBOX_IDS.length; i++) {
+            // Do this in Java to localize numbers
+            toolbar.getMenu().findItem(COLUMN_CHECKBOX_IDS[i])
+                    .setTitle(String.format(Locale.getDefault(), "%d", i + MIN_NUM_COLUMNS));
+        }
+        refreshToolbarState();
+
         subscriptionGridLayout = root.findViewById(R.id.subscriptions_grid);
         subscriptionGridLayout.setNumColumns(prefs.getInt(PREF_NUM_COLUMNS, getDefaultNumOfColumns()));
         registerForContextMenu(subscriptionGridLayout);
@@ -116,6 +133,57 @@ public class SubscriptionFragment extends Fragment {
                     getResources().getInteger(R.integer.swipe_to_refresh_duration_in_ms));
         });
         return root;
+    }
+
+    private void refreshToolbarState() {
+        int columns = prefs.getInt(PREF_NUM_COLUMNS, getDefaultNumOfColumns());
+        toolbar.getMenu().findItem(COLUMN_CHECKBOX_IDS[columns - MIN_NUM_COLUMNS]).setChecked(true);
+
+        isUpdatingFeeds = MenuItemUtils.updateRefreshMenuItem(toolbar.getMenu(),
+                R.id.refresh_item, updateRefreshMenuItemChecker);
+    }
+
+    @Override
+    public boolean onMenuItemClick(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.refresh_item:
+                AutoUpdateManager.runImmediate(requireContext());
+                return true;
+            case R.id.subscriptions_filter:
+                SubscriptionsFilterDialog.showDialog(requireContext());
+                return true;
+            case R.id.subscriptions_sort:
+                FeedSortDialog.showDialog(requireContext());
+                return true;
+            case R.id.subscription_num_columns_2:
+                setColumnNumber(2);
+                return true;
+            case R.id.subscription_num_columns_3:
+                setColumnNumber(3);
+                return true;
+            case R.id.subscription_num_columns_4:
+                setColumnNumber(4);
+                return true;
+            case R.id.subscription_num_columns_5:
+                setColumnNumber(5);
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private void setColumnNumber(int columns) {
+        subscriptionGridLayout.setNumColumns(columns);
+        prefs.edit().putInt(PREF_NUM_COLUMNS, columns).apply();
+        refreshToolbarState();
+    }
+
+    private void setupEmptyView() {
+        emptyView = new EmptyViewHandler(getContext());
+        emptyView.setIcon(R.attr.ic_folder);
+        emptyView.setTitle(R.string.no_subscriptions_head_label);
+        emptyView.setMessage(R.string.no_subscriptions_label);
+        emptyView.attachToListView(subscriptionGridLayout);
     }
 
     @Override
@@ -309,7 +377,9 @@ public class SubscriptionFragment extends Fragment {
             }
         };
 
-        String message = getString(R.string.feed_delete_confirmation_msg, feed.getTitle());
+        int messageId = feed.isLocalFeed() ? R.string.feed_delete_confirmation_local_msg
+                : R.string.feed_delete_confirmation_msg;
+        String message = getString(messageId, feed.getTitle());
         ConfirmationDialog dialog = new ConfirmationDialog(getContext(), R.string.remove_feed_label, message) {
             @Override
             public void onConfirmButtonPressed(DialogInterface clickedDialog) {
@@ -361,7 +431,7 @@ public class SubscriptionFragment extends Fragment {
     public void onEventMainThread(DownloadEvent event) {
         Log.d(TAG, "onEventMainThread() called with: " + "event = [" + event + "]");
         if (event.hasChangedFeedUpdateStatus(isUpdatingFeeds)) {
-            getActivity().invalidateOptionsMenu();
+            refreshToolbarState();
         }
     }
 
