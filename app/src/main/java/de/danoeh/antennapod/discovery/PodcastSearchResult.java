@@ -51,6 +51,7 @@ public class PodcastSearchResult {
         this.imageUrl = imageUrl;
         this.feedUrl = feedUrl;
         this.author = author;
+        this.category = null;
     }
 
     private PodcastSearchResult(String title, @Nullable String imageUrl, @Nullable String feedUrl) {

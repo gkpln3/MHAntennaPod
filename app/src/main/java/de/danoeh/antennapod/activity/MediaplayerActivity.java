@@ -710,16 +710,6 @@ public abstract class MediaplayerActivity extends CastEnabledActivity implements
         } else {
             Toast.makeText(this, R.string.needs_storage_permission, Toast.LENGTH_LONG).show();
         }
-
-        Log.d(TAG, "Received VIEW intent: " + intent.getData().getPath());
-        ExternalMedia media = new ExternalMedia(intent.getData().getPath(), type);
-
-        new PlaybackServiceStarter(this, media)
-                .callEvenIfRunning(true)
-                .startWhenPrepared(true)
-                .shouldStream(false)
-                .prepareImmediately(true)
-                .start();
     }
 
     @Nullable

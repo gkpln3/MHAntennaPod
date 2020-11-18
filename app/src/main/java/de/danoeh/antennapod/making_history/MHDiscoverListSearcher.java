@@ -49,7 +49,7 @@ public class MHDiscoverListSearcher implements PodcastSearcher {
 
     @Override
     public String getName() {
-        return null;
+        return "Podcast Israel";
     }
 
     private List<PodcastSearchResult> filterResults(List<PodcastSearchResult> podcastSearchResults, String query)

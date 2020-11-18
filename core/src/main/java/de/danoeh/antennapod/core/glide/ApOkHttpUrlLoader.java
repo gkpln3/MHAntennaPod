@@ -88,11 +88,6 @@ class ApOkHttpUrlLoader implements ModelLoader<String, InputStream> {
                 && !model.startsWith(ContentResolver.SCHEME_ANDROID_RESOURCE);
     }
 
-    @Override
-    public boolean handles(@NonNull String s) {
-        return true;
-    }
-
     private static class NetworkAllowanceInterceptor implements Interceptor {
 
         @NonNull

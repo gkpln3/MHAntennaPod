@@ -114,11 +114,6 @@ public class AddFeedFragment extends Fragment {
         if (Build.VERSION.SDK_INT < 21) {
             viewBinding.addLocalFolderButton.setVisibility(View.GONE);
         }
-        builder.setView(content);
-        builder.setPositiveButton(R.string.confirm_label, (dialog, which) -> addUrl(editText.getText().toString()));
-        builder.setNegativeButton(R.string.cancel_label, null);
-        builder.show();
-    }
 
         String query = viewBinding.combinedFeedSearchEditText.getText().toString();
         viewBinding.searchButton.setOnClickListener(view -> performSearch(query));

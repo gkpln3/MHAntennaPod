@@ -232,20 +232,6 @@ public class SubscriptionFragment extends Fragment implements Toolbar.OnMenuItem
         }
     }
 
-    private void setColumnNumber(int columns) {
-        subscriptionGridLayout.setNumColumns(columns);
-        prefs.edit().putInt(PREF_NUM_COLUMNS, columns).apply();
-        getActivity().invalidateOptionsMenu();
-    }
-
-    private void setupEmptyView() {
-        emptyView = new EmptyViewHandler(getContext());
-        emptyView.setIcon(R.attr.ic_folder);
-        emptyView.setTitle(R.string.no_subscriptions_head_label);
-        emptyView.setMessage(R.string.no_subscriptions_label);
-        emptyView.attachToListView(subscriptionGridLayout);
-    }
-
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);

@@ -48,6 +48,8 @@ import com.google.firebase.analytics.FirebaseAnalytics;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
 import de.danoeh.antennapod.core.ClientConfig;
@@ -220,7 +222,7 @@ public class PlaybackService extends MediaBrowserServiceCompat {
     private MHAnalytics mMakingHistoryAnalytics;
     private int lastUpdateTime = 0;
 
-    private long autoSkippedFeedMediaId = -1;
+    private String autoSkippedFeedMediaId = null;
 
     /**
      * Used for Lollipop notifications, Android Wear, and Android Auto.
@@ -1121,10 +1123,6 @@ public class PlaybackService extends MediaBrowserServiceCompat {
             media.onPlaybackCompleted(getApplicationContext());
         } else {
             media.onPlaybackPause(getApplicationContext());
-        }
-
-        if (autoSkippedFeedMediaId >= 0 && autoSkippedFeedMediaId == media.getId()) {
-            ended = true;
         }
 
         if (item != null) {

@@ -1081,12 +1081,6 @@ public class UserPreferences {
         return new SubscriptionsFilter(value);
     }
 
-    public static void setSubscriptionsFilter(SubscriptionsFilter value) {
-        prefs.edit()
-                .putString(PREF_FILTER_FEED, value.serialize())
-                .apply();
-    }
-
     public static long getUsageCountingDateMillis() {
         return prefs.getLong(PREF_USAGE_COUNTING_DATE, -1);
     }

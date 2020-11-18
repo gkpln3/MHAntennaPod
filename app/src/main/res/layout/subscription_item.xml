@@ -14,7 +14,7 @@
         android:layout_height="fill_parent"
         android:scaleType="fitCenter"
         android:background="@color/non_square_icon_background"
-        tools:src="@mipmap/ic_launcher_round"
+        tools:src="@drawable/ic_launcher"
         squareImageView:direction="width"/>
 
     <com.joanzapata.iconify.widget.IconTextView
