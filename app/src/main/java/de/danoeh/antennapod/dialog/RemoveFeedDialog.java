@@ -8,6 +8,8 @@ import de.danoeh.antennapod.R;
 import de.danoeh.antennapod.core.dialog.ConfirmationDialog;
 import de.danoeh.antennapod.core.feed.Feed;
 import de.danoeh.antennapod.core.storage.DBWriter;
+import de.danoeh.antennapod.fragment.FeedItemlistFragment;
+import de.danoeh.antennapod.making_history.MHDefaultFeedLoader;
 import io.reactivex.Completable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
@@ -37,6 +39,7 @@ public class RemoveFeedDialog {
                         .subscribe(
                             () -> {
                                 Log.d(TAG, "Feed was deleted");
+                                MHDefaultFeedLoader.addUnwantedFeedToList(context, feed.getIdentifyingValue());
                                 if (onSuccess != null) {
                                     onSuccess.run();
                                 }

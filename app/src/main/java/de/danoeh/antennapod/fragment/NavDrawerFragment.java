@@ -196,8 +196,6 @@ public class NavDrawerFragment extends Fragment implements AdapterView.OnItemCli
                         } else {
                             showMainActivity(EpisodesFragment.TAG);
                         }
-                        remover.executeAsync();
-                        MHDefaultFeedLoader.addUnwantedFeedToList(NavDrawerFragment.this.getContext(), feed.getIdentifyingValue());
                     }
                 });
                 return true;

@@ -297,8 +297,7 @@ public class FeedItemlistFragment extends Fragment implements AdapterView.OnItem
                 return true;
             case R.id.remove_item:
                 RemoveFeedDialog.show(getContext(), feed, () -> {
-                    MHDefaultFeedLoader.addUnwantedFeedToList(FeedItemlistFragment.this.getContext(), feed.getIdentifyingValue());
-                    ((MainActivity) getActivity()).loadFragment(EpisodesFragment.TAG, null)
+                    ((MainActivity) getActivity()).loadFragment(EpisodesFragment.TAG, null);
                 });
                 return true;
             default:
