@@ -98,6 +98,8 @@ public class MHDefaultFeedLoader {
                                     for (int i = 0; i < result.size(); i++) {
                                         if (!unwantedPodcasts.contains(result.get(i).getXmlUrl()))
                                             selectedPodcasts.add(i);
+                                        // Once we've added this podcast, theres no need to add it again ever...
+                                        MHDefaultFeedLoader.addUnwantedFeedToList(activity, result.get(i).getXmlUrl());
                                     }
 
                                     OpmlFeedQueuer queuer = new OpmlFeedQueuer(activity, toIntArray(selectedPodcasts));

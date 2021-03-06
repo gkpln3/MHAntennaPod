@@ -39,7 +39,6 @@ public class RemoveFeedDialog {
                         .subscribe(
                             () -> {
                                 Log.d(TAG, "Feed was deleted");
-                                MHDefaultFeedLoader.addUnwantedFeedToList(context, feed.getIdentifyingValue());
                                 if (onSuccess != null) {
                                     onSuccess.run();
                                 }
