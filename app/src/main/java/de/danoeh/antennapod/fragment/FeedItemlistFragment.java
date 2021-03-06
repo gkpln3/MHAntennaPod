@@ -1,7 +1,6 @@
 package de.danoeh.antennapod.fragment;
 
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.res.Configuration;
 import android.content.Intent;
 import android.graphics.LightingColorFilter;
@@ -17,7 +16,6 @@ import android.widget.AdapterView;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
@@ -36,8 +34,6 @@ import com.joanzapata.iconify.widget.IconTextView;
 import de.danoeh.antennapod.R;
 import de.danoeh.antennapod.activity.MainActivity;
 import de.danoeh.antennapod.adapter.EpisodeItemListAdapter;
-import de.danoeh.antennapod.core.asynctask.FeedRemover;
-import de.danoeh.antennapod.core.dialog.ConfirmationDialog;
 import de.danoeh.antennapod.core.dialog.DownloadRequestErrorDialogCreator;
 import de.danoeh.antennapod.core.event.DownloadEvent;
 import de.danoeh.antennapod.core.event.DownloaderUpdate;
@@ -65,6 +61,7 @@ import de.danoeh.antennapod.core.util.ThemeUtils;
 import de.danoeh.antennapod.core.util.gui.MoreContentListFooterUtil;
 import de.danoeh.antennapod.dialog.EpisodesApplyActionFragment;
 import de.danoeh.antennapod.dialog.FilterDialog;
+import de.danoeh.antennapod.dialog.RemoveFeedDialog;
 import de.danoeh.antennapod.dialog.RenameFeedDialog;
 import de.danoeh.antennapod.making_history.MHDefaultFeedLoader;
 import de.danoeh.antennapod.menuhandler.FeedItemMenuHandler;
@@ -299,29 +296,10 @@ public class FeedItemlistFragment extends Fragment implements AdapterView.OnItem
                 new RenameFeedDialog(getActivity(), feed).show();
                 return true;
             case R.id.remove_item:
-                final FeedRemover remover = new FeedRemover(
-                        getActivity(), feed) {
-                    @Override
-                    protected void onPostExecute(Void result) {
-                        super.onPostExecute(result);
-                        ((MainActivity) getActivity()).loadFragment(EpisodesFragment.TAG, null);
-                    }
-                };
-                int messageId = feed.isLocalFeed() ? R.string.feed_delete_confirmation_local_msg
-                        : R.string.feed_delete_confirmation_msg;
-                ConfirmationDialog conDialog = new ConfirmationDialog(getActivity(),
-                        R.string.remove_feed_label,
-                        getString(messageId, feed.getTitle())) {
-
-                    @Override
-                    public void onConfirmButtonPressed(
-                            DialogInterface dialog) {
-                        dialog.dismiss();
-                        MHDefaultFeedLoader.addUnwantedFeedToList(FeedItemlistFragment.this.getContext(), feed.getIdentifyingValue());
-                        remover.executeAsync();
-                    }
-                };
-                conDialog.createNewDialog().show();
+                RemoveFeedDialog.show(getContext(), feed, () -> {
+                    MHDefaultFeedLoader.addUnwantedFeedToList(FeedItemlistFragment.this.getContext(), feed.getIdentifyingValue());
+                    ((MainActivity) getActivity()).loadFragment(EpisodesFragment.TAG, null)
+                });
                 return true;
             default:
                 return false;
@@ -475,10 +453,6 @@ public class FeedItemlistFragment extends Fragment implements AdapterView.OnItem
         if (feed.getItemFilter() != null) {
             FeedItemFilter filter = feed.getItemFilter();
             if (filter.getValues().length > 0) {
-                if (feed.hasLastUpdateFailed()) {
-                    RelativeLayout.LayoutParams p = (RelativeLayout.LayoutParams) txtvInformation.getLayoutParams();
-                    p.addRule(RelativeLayout.BELOW, R.id.txtvFailure);
-                }
                 txtvInformation.setText("{md-info-outline} " + this.getString(R.string.filtered_label));
                 Iconify.addIcons(txtvInformation);
                 txtvInformation.setOnClickListener((l) -> {

@@ -80,7 +80,7 @@ public class SyncService extends Worker {
         if (!GpodnetPreferences.loggedIn()) {
             return Result.success();
         }
-        syncServiceImpl = new GpodnetService(AntennapodHttpClient.getHttpClient(), GpodnetService.DEFAULT_BASE_HOST);
+        syncServiceImpl = new GpodnetService(AntennapodHttpClient.getHttpClient(), GpodnetPreferences.getHostname());
         SharedPreferences.Editor prefs = getApplicationContext().getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
                 .edit();
         prefs.putLong(PREF_LAST_SYNC_ATTEMPT_TIMESTAMP, System.currentTimeMillis()).apply();
@@ -474,6 +474,7 @@ public class SyncService extends Worker {
             }
         }
         DBWriter.removeQueueItem(getApplicationContext(), false, queueToBeRemoved.toArray());
+        DBReader.loadAdditionalFeedItemListData(updatedItems);
         DBWriter.setItemList(updatedItems);
     }
 

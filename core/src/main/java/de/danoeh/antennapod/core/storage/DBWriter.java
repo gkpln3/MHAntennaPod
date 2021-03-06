@@ -785,6 +785,7 @@ public class DBWriter {
             adapter.open();
             adapter.setFeedItemlist(items);
             adapter.close();
+            EventBus.getDefault().post(FeedItemEvent.updated(items));
         });
     }
 
