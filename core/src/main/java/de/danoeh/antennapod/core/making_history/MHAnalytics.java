@@ -5,7 +5,7 @@ import android.os.Bundle;
 
 import com.google.firebase.analytics.FirebaseAnalytics;
 
-import de.danoeh.antennapod.core.util.playback.Playable;
+import de.danoeh.antennapod.model.playback.Playable;
 
 public class MHAnalytics {
     private FirebaseAnalytics mFirebaseAnalytics;

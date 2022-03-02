@@ -6,5 +6,5 @@
         android:title="@string/refresh_label"
         android:menuCategory="container"
         app:showAsAction="ifRoom"
-        android:icon="?attr/navigation_refresh"/>
+        />
 </menu>

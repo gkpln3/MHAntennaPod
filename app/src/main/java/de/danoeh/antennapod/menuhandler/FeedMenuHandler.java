@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.util.Log;
 import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 
 import androidx.annotation.NonNull;
@@ -15,13 +14,12 @@ import java.util.Set;
 
 import de.danoeh.antennapod.R;
 import de.danoeh.antennapod.core.dialog.ConfirmationDialog;
-import de.danoeh.antennapod.core.feed.Feed;
+import de.danoeh.antennapod.model.feed.Feed;
 import de.danoeh.antennapod.core.storage.DBTasks;
 import de.danoeh.antennapod.core.storage.DBWriter;
-import de.danoeh.antennapod.core.storage.DownloadRequestException;
 import de.danoeh.antennapod.core.util.IntentUtils;
 import de.danoeh.antennapod.core.util.ShareUtils;
-import de.danoeh.antennapod.core.util.SortOrder;
+import de.danoeh.antennapod.model.feed.SortOrder;
 import de.danoeh.antennapod.dialog.FilterDialog;
 import de.danoeh.antennapod.dialog.IntraFeedSortDialog;
 
@@ -56,49 +54,38 @@ public class FeedMenuHandler {
 
     /**
      * NOTE: This method does not handle clicks on the 'remove feed' - item.
-     *
-     * @throws DownloadRequestException
      */
-    public static boolean onOptionsItemClicked(final Context context, final MenuItem item,
-                                               final Feed selectedFeed) throws DownloadRequestException {
-        switch (item.getItemId()) {
-            case R.id.refresh_item:
-                DBTasks.forceRefreshFeed(context, selectedFeed, true);
-                break;
-            case R.id.refresh_complete_item:
-                DBTasks.forceRefreshCompleteFeed(context, selectedFeed);
-                break;
-            case R.id.sort_items:
-                showSortDialog(context, selectedFeed);
-                break;
-            case R.id.filter_items:
-                showFilterDialog(context, selectedFeed);
-                break;
-            case R.id.mark_all_read_item:
-                ConfirmationDialog conDialog = new ConfirmationDialog(context,
-                        R.string.mark_all_read_label,
-                        R.string.mark_all_read_feed_confirmation_msg) {
+    public static boolean onOptionsItemClicked(final Context context, final MenuItem item, final Feed selectedFeed) {
+        final int itemId = item.getItemId();
+        if (itemId == R.id.refresh_item) {
+            DBTasks.forceRefreshFeed(context, selectedFeed, true);
+        } else if (itemId == R.id.refresh_complete_item) {
+            DBTasks.forceRefreshCompleteFeed(context, selectedFeed);
+        } else if (itemId == R.id.sort_items) {
+            showSortDialog(context, selectedFeed);
+        } else if (itemId == R.id.filter_items) {
+            showFilterDialog(context, selectedFeed);
+        } else if (itemId == R.id.mark_all_read_item) {
+            ConfirmationDialog conDialog = new ConfirmationDialog(context,
+                    R.string.mark_all_read_label,
+                    R.string.mark_all_read_feed_confirmation_msg) {
 
-                    @Override
-                    public void onConfirmButtonPressed(
-                            DialogInterface dialog) {
-                        dialog.dismiss();
-                        DBWriter.markFeedRead(selectedFeed.getId());
-                    }
-                };
-                conDialog.createNewDialog().show();
-                break;
-            case R.id.visit_website_item:
-                IntentUtils.openInBrowser(context, selectedFeed.getLink());
-                break;
-            case R.id.share_link_item:
-                ShareUtils.shareFeedlink(context, selectedFeed);
-                break;
-            case R.id.share_download_url_item:
-                ShareUtils.shareFeedDownloadLink(context, selectedFeed);
-                break;
-            default:
-                return false;
+                @Override
+                public void onConfirmButtonPressed(
+                        DialogInterface dialog) {
+                    dialog.dismiss();
+                    DBWriter.markFeedRead(selectedFeed.getId());
+                }
+            };
+            conDialog.createNewDialog().show();
+        } else if (itemId == R.id.visit_website_item) {
+            IntentUtils.openInBrowser(context, selectedFeed.getLink());
+        } else if (itemId == R.id.share_link_item) {
+            ShareUtils.shareFeedlink(context, selectedFeed);
+        } else if (itemId == R.id.share_download_url_item) {
+            ShareUtils.shareFeedDownloadLink(context, selectedFeed);
+        } else {
+            return false;
         }
         return true;
     }
@@ -117,7 +104,7 @@ public class FeedMenuHandler {
 
 
     private static void showSortDialog(Context context, Feed selectedFeed) {
-        IntraFeedSortDialog sortDialog = new IntraFeedSortDialog(context, selectedFeed.getSortOrder()) {
+        IntraFeedSortDialog sortDialog = new IntraFeedSortDialog(context, selectedFeed.getSortOrder(), selectedFeed.isLocalFeed()) {
             @Override
             protected void updateSort(@NonNull SortOrder sortOrder) {
                 selectedFeed.setSortOrder(sortOrder);

@@ -1,28 +1,18 @@
 package de.danoeh.antennapod.core.storage;
 
+import static android.content.Context.MODE_PRIVATE;
+
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
-import android.os.Looper;
 import android.text.TextUtils;
 import android.util.Log;
+
 import androidx.annotation.VisibleForTesting;
-import de.danoeh.antennapod.core.ClientConfig;
-import de.danoeh.antennapod.core.R;
-import de.danoeh.antennapod.core.event.FeedItemEvent;
-import de.danoeh.antennapod.core.event.FeedListUpdateEvent;
-import de.danoeh.antennapod.core.event.MessageEvent;
-import de.danoeh.antennapod.core.feed.Feed;
-import de.danoeh.antennapod.core.feed.FeedItem;
-import de.danoeh.antennapod.core.feed.FeedMedia;
-import de.danoeh.antennapod.core.feed.FeedPreferences;
-import de.danoeh.antennapod.core.feed.LocalFeedUpdater;
-import de.danoeh.antennapod.core.preferences.UserPreferences;
-import de.danoeh.antennapod.core.service.download.DownloadStatus;
-import de.danoeh.antennapod.core.sync.SyncService;
-import de.danoeh.antennapod.core.util.DownloadError;
-import de.danoeh.antennapod.core.util.LongList;
-import de.danoeh.antennapod.core.util.comparator.FeedItemPubdateComparator;
+
+import de.danoeh.antennapod.core.service.download.DownloadRequest;
+import de.danoeh.antennapod.core.service.download.DownloadRequestCreator;
+import de.danoeh.antennapod.core.service.download.DownloadService;
 import org.greenrobot.eventbus.EventBus;
 
 import java.util.ArrayList;
@@ -36,9 +26,23 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
-import java.util.concurrent.atomic.AtomicBoolean;
 
-import static android.content.Context.MODE_PRIVATE;
+import de.danoeh.antennapod.core.R;
+import de.danoeh.antennapod.event.FeedItemEvent;
+import de.danoeh.antennapod.event.FeedListUpdateEvent;
+import de.danoeh.antennapod.event.MessageEvent;
+import de.danoeh.antennapod.core.preferences.UserPreferences;
+import de.danoeh.antennapod.core.service.download.DownloadStatus;
+import de.danoeh.antennapod.core.storage.mapper.FeedCursorMapper;
+import de.danoeh.antennapod.core.sync.SyncService;
+import de.danoeh.antennapod.core.sync.queue.SynchronizationQueueSink;
+import de.danoeh.antennapod.core.util.DownloadError;
+import de.danoeh.antennapod.core.util.LongList;
+import de.danoeh.antennapod.core.util.comparator.FeedItemPubdateComparator;
+import de.danoeh.antennapod.model.feed.Feed;
+import de.danoeh.antennapod.model.feed.FeedItem;
+import de.danoeh.antennapod.model.feed.FeedMedia;
+import de.danoeh.antennapod.net.sync.model.EpisodeAction;
 
 /**
  * Provides methods for doing common tasks that use DBReader and DBWriter.
@@ -53,6 +57,8 @@ public final class DBTasks {
      * Executor service used by the autodownloadUndownloadedEpisodes method.
      */
     private static final ExecutorService autodownloadExec;
+
+    private static AutomaticDownloadAlgorithm downloadAlgorithm = new AutomaticDownloadAlgorithm();
 
     static {
         autodownloadExec = Executors.newSingleThreadExecutor(r -> {
@@ -97,8 +103,6 @@ public final class DBTasks {
         }
     }
 
-    private static final AtomicBoolean isRefreshing = new AtomicBoolean(false);
-
     /**
      * Refreshes all feeds.
      * It must not be from the main thread.
@@ -109,17 +113,7 @@ public final class DBTasks {
      * @param initiatedByUser a boolean indicating if the refresh was triggered by user action.
      */
     public static void refreshAllFeeds(final Context context, boolean initiatedByUser) {
-        if (!isRefreshing.compareAndSet(false, true)) {
-            Log.d(TAG, "Ignoring request to refresh all feeds: Refresh lock is locked");
-            return;
-        }
-
-        if (Looper.myLooper() == Looper.getMainLooper()) {
-            throw new IllegalStateException("DBTasks.refreshAllFeeds() must not be called from the main thread.");
-        }
-
-        refreshFeeds(context, DBReader.getFeedList(), initiatedByUser);
-        isRefreshing.set(false);
+        DownloadService.refreshAllFeeds(context, initiatedByUser);
 
         SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, MODE_PRIVATE);
         prefs.edit().putLong(PREF_LAST_REFRESH, System.currentTimeMillis()).apply();
@@ -131,59 +125,7 @@ public final class DBTasks {
         // See Issue #2577 for the details of the rationale
     }
 
-    /**
-     * @param context
-     * @param feedList the list of feeds to refresh
-     * @param initiatedByUser a boolean indicating if the refresh was triggered by user action.
-     */
-    private static void refreshFeeds(final Context context,
-                                     final List<Feed> feedList,
-                                     boolean initiatedByUser) {
 
-        for (Feed feed : feedList) {
-            FeedPreferences prefs = feed.getPreferences();
-            // feeds with !getKeepUpdated can only be refreshed
-            // directly from the FeedActivity
-            if (prefs.getKeepUpdated()) {
-                try {
-                    refreshFeed(context, feed);
-                } catch (DownloadRequestException e) {
-                    e.printStackTrace();
-                    DBWriter.addDownloadStatus(
-                            new DownloadStatus(feed,
-                                               feed.getHumanReadableIdentifier(),
-                                               DownloadError.ERROR_REQUEST_ERROR,
-                                               false,
-                                               e.getMessage(),
-                                               initiatedByUser)
-                    );
-                }
-            }
-        }
-
-    }
-
-    /**
-     * Downloads all pages of the given feed even if feed has not been modified since last refresh
-     *
-     * @param context Used for requesting the download.
-     * @param feed    The Feed object.
-     */
-    public static void forceRefreshCompleteFeed(final Context context, final Feed feed) {
-        try {
-            refreshFeed(context, feed, true, true, false);
-        } catch (DownloadRequestException e) {
-            e.printStackTrace();
-            DBWriter.addDownloadStatus(
-                    new DownloadStatus(feed,
-                                       feed.getHumanReadableIdentifier(),
-                                       DownloadError.ERROR_REQUEST_ERROR,
-                                       false,
-                                       e.getMessage(),
-                                       false)
-            );
-        }
-    }
 
     /**
      * Queues the next page of this Feed for download. The given Feed has to be a paged
@@ -193,61 +135,36 @@ public final class DBTasks {
      * @param feed         The feed whose next page should be loaded.
      * @param loadAllPages True if any subsequent pages should also be loaded, false otherwise.
      */
-    public static void loadNextPageOfFeed(final Context context, Feed feed, boolean loadAllPages) throws DownloadRequestException {
+    public static void loadNextPageOfFeed(final Context context, Feed feed, boolean loadAllPages) {
         if (feed.isPaged() && feed.getNextPageLink() != null) {
             int pageNr = feed.getPageNr() + 1;
             Feed nextFeed = new Feed(feed.getNextPageLink(), null, feed.getTitle() + "(" + pageNr + ")");
             nextFeed.setPageNr(pageNr);
             nextFeed.setPaged(true);
             nextFeed.setId(feed.getId());
-            DownloadRequester.getInstance().downloadFeed(context, nextFeed, loadAllPages, false, true);
+
+            DownloadRequest.Builder builder = DownloadRequestCreator.create(nextFeed);
+            builder.loadAllPages(loadAllPages);
+            DownloadService.download(context, false, builder.build());
         } else {
             Log.e(TAG, "loadNextPageOfFeed: Feed was either not paged or contained no nextPageLink");
         }
     }
 
-    /**
-     * Refresh a specific Feed. The refresh may get canceled if the feed does not seem to be modified
-     * and the last update was only few days ago.
-     *
-     * @param context Used for requesting the download.
-     * @param feed    The Feed object.
-     */
-    private static void refreshFeed(Context context, Feed feed)
-            throws DownloadRequestException {
-        Log.d(TAG, "refreshFeed(feed.id: " + feed.getId() +")");
-        refreshFeed(context, feed, false, false, false);
+    public static void forceRefreshFeed(Context context, Feed feed, boolean initiatedByUser) {
+        forceRefreshFeed(context, feed, false, initiatedByUser);
     }
 
-    /**
-     * Refresh a specific feed even if feed has not been modified since last refresh
-     *
-     * @param context Used for requesting the download.
-     * @param feed    The Feed object.
-     */
-    public static void forceRefreshFeed(Context context, Feed feed, boolean initiatedByUser)
-            throws DownloadRequestException {
-        Log.d(TAG, "refreshFeed(feed.id: " + feed.getId() +")");
-        refreshFeed(context, feed, false, true, initiatedByUser);
+    public static void forceRefreshCompleteFeed(final Context context, final Feed feed) {
+        forceRefreshFeed(context, feed, true, true);
     }
 
-    private static void refreshFeed(Context context, Feed feed, boolean loadAllPages, boolean force, boolean initiatedByUser)
-            throws DownloadRequestException {
-        Feed f;
-        String lastUpdate = feed.hasLastUpdateFailed() ? null : feed.getLastUpdate();
-        if (feed.getPreferences() == null) {
-            f = new Feed(feed.getDownload_url(), lastUpdate, feed.getTitle());
-        } else {
-            f = new Feed(feed.getDownload_url(), lastUpdate, feed.getTitle(),
-                    feed.getPreferences().getUsername(), feed.getPreferences().getPassword());
-        }
-        f.setId(feed.getId());
-
-        if (f.isLocalFeed()) {
-            new Thread(() -> LocalFeedUpdater.updateFeed(f, context)).start();
-        } else {
-            DownloadRequester.getInstance().downloadFeed(context, f, loadAllPages, force, initiatedByUser);
-        }
+    private static void forceRefreshFeed(Context context, Feed feed, boolean loadAllPages, boolean initiatedByUser) {
+        DownloadRequest.Builder builder = DownloadRequestCreator.create(feed);
+        builder.setInitiatedByUser(initiatedByUser);
+        builder.setForce(true);
+        builder.loadAllPages(loadAllPages);
+        DownloadService.download(context, false, builder.build());
     }
 
     /**
@@ -263,8 +180,8 @@ public final class DBTasks {
         EventBus.getDefault().post(new MessageEvent(context.getString(R.string.error_file_not_found)));
     }
 
-    public static List<? extends FeedItem> enqueueFeedItemsToDownload(final Context context,
-                       List<? extends FeedItem> items) throws InterruptedException, ExecutionException {
+    public static List<FeedItem> enqueueFeedItemsToDownload(final Context context,
+                       List<FeedItem> items) throws InterruptedException, ExecutionException {
         List<FeedItem> itemsToEnqueue = new ArrayList<>();
         if (UserPreferences.enqueueDownloadedEpisodes()) {
             LongList queueIDList = DBReader.getQueueIDList();
@@ -279,7 +196,7 @@ public final class DBTasks {
     }
 
     /**
-     * Looks for undownloaded episodes in the queue or list of unread items and request a download if
+     * Looks for non-downloaded episodes in the queue or list of unread items and request a download if
      * 1. Network is available
      * 2. The device is charging or the user allows auto download on battery
      * 3. There is free space in the episode cache
@@ -290,9 +207,15 @@ public final class DBTasks {
      */
     public static Future<?> autodownloadUndownloadedItems(final Context context) {
         Log.d(TAG, "autodownloadUndownloadedItems");
-        return autodownloadExec.submit(ClientConfig.automaticDownloadAlgorithm
-                .autoDownloadUndownloadedItems(context));
+        return autodownloadExec.submit(downloadAlgorithm.autoDownloadUndownloadedItems(context));
+    }
 
+    /**
+     * For testing purpose only.
+     */
+    @VisibleForTesting(otherwise = VisibleForTesting.NONE)
+    public static void setDownloadAlgorithm(AutomaticDownloadAlgorithm newDownloadAlgorithm) {
+        downloadAlgorithm = newDownloadAlgorithm;
     }
 
     /**
@@ -338,7 +261,7 @@ public final class DBTasks {
     private static Feed searchFeedByIdentifyingValueOrID(PodDBAdapter adapter,
                                                          Feed feed) {
         if (feed.getId() != 0) {
-            return DBReader.getFeed(feed.getId(), adapter);
+            return DBReader.getFeed(feed.getId());
         } else {
             List<Feed> feeds = DBReader.getFeedList();
             for (Feed f : feeds) {
@@ -354,9 +277,22 @@ public final class DBTasks {
     /**
      * Get a FeedItem by its identifying value.
      */
-    private static FeedItem searchFeedItemByIdentifyingValue(Feed feed, String identifier) {
-        for (FeedItem item : feed.getItems()) {
-            if (TextUtils.equals(item.getIdentifyingValue(), identifier)) {
+    private static FeedItem searchFeedItemByIdentifyingValue(List<FeedItem> items, FeedItem searchItem) {
+        for (FeedItem item : items) {
+            if (TextUtils.equals(item.getIdentifyingValue(), searchItem.getIdentifyingValue())) {
+                return item;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Guess if one of the items could actually mean the searched item, even if it uses another identifying value.
+     * This is to work around podcasters breaking their GUIDs.
+     */
+    private static FeedItem searchFeedItemGuessDuplicate(List<FeedItem> items, FeedItem searchItem) {
+        for (FeedItem item : items) {
+            if (FeedItemDuplicateGuesser.seemDuplicates(item, searchItem)) {
                 return item;
             }
         }
@@ -429,11 +365,51 @@ public final class DBTasks {
             // Look for new or updated Items
             for (int idx = 0; idx < newFeed.getItems().size(); idx++) {
                 final FeedItem item = newFeed.getItems().get(idx);
-                FeedItem oldItem = searchFeedItemByIdentifyingValue(savedFeed, item.getIdentifyingValue());
-                if (oldItem == null) {
+
+                FeedItem possibleDuplicate = searchFeedItemGuessDuplicate(newFeed.getItems(), item);
+                if (!newFeed.isLocalFeed() && possibleDuplicate != null && item != possibleDuplicate) {
+                    // Canonical episode is the first one returned (usually oldest)
+                    DBWriter.addDownloadStatus(new DownloadStatus(savedFeed,
+                            item.getTitle(), DownloadError.ERROR_PARSER_EXCEPTION_DUPLICATE, false,
+                            "The podcast host appears to have added the same episode twice. "
+                                    + "AntennaPod still refreshed the feed and attempted to repair it."
+                                    + "\n\nOriginal episode:\n" + duplicateEpisodeDetails(item)
+                                    + "\n\nSecond episode that is also in the feed:\n"
+                                    + duplicateEpisodeDetails(possibleDuplicate), false));
+                    continue;
+                }
+
+                FeedItem oldItem = searchFeedItemByIdentifyingValue(savedFeed.getItems(), item);
+                if (!newFeed.isLocalFeed() && oldItem == null) {
+                    oldItem = searchFeedItemGuessDuplicate(savedFeed.getItems(), item);
+                    if (oldItem != null) {
+                        Log.d(TAG, "Repaired duplicate: " + oldItem + ", " + item);
+                        DBWriter.addDownloadStatus(new DownloadStatus(savedFeed,
+                                item.getTitle(), DownloadError.ERROR_PARSER_EXCEPTION_DUPLICATE, false,
+                                "The podcast host changed the ID of an existing episode instead of just "
+                                        + "updating the episode itself. AntennaPod still refreshed the feed and "
+                                        + "attempted to repair it."
+                                        + "\n\nOriginal episode:\n" + duplicateEpisodeDetails(oldItem)
+                                        + "\n\nNow the feed contains:\n" + duplicateEpisodeDetails(item), false));
+                        oldItem.setItemIdentifier(item.getItemIdentifier());
+
+                        if (oldItem.isPlayed() && oldItem.getMedia() != null) {
+                            EpisodeAction action = new EpisodeAction.Builder(oldItem, EpisodeAction.PLAY)
+                                    .currentTimestamp()
+                                    .started(oldItem.getMedia().getDuration() / 1000)
+                                    .position(oldItem.getMedia().getDuration() / 1000)
+                                    .total(oldItem.getMedia().getDuration() / 1000)
+                                    .build();
+                            SynchronizationQueueSink.enqueueEpisodeActionIfSynchronizationIsActive(context, action);
+                        }
+                    }
+                }
+
+                if (oldItem != null) {
+                    oldItem.updateFromOther(item);
+                } else {
                     // item is new
                     item.setFeed(savedFeed);
-                    item.setAutoDownload(savedFeed.getPreferences().getAutoDownload());
 
                     if (idx >= savedFeed.getItems().size()) {
                         savedFeed.getItems().add(item);
@@ -453,8 +429,6 @@ public final class DBTasks {
                                 + " new, prior most recent date = " + priorMostRecentDate);
                         item.setNew();
                     }
-                } else {
-                    oldItem.updateFromOther(item);
                 }
             }
 
@@ -463,7 +437,7 @@ public final class DBTasks {
                 Iterator<FeedItem> it = savedFeed.getItems().iterator();
                 while (it.hasNext()) {
                     FeedItem feedItem = it.next();
-                    if (searchFeedItemByIdentifyingValue(newFeed, feedItem.getIdentifyingValue()) == null) {
+                    if (searchFeedItemByIdentifyingValue(newFeed.getItems(), feedItem) == null) {
                         unlistedItems.add(feedItem);
                         it.remove();
                     }
@@ -504,6 +478,12 @@ public final class DBTasks {
         return resultFeed;
     }
 
+    private static String duplicateEpisodeDetails(FeedItem item) {
+        return "Title: " + item.getTitle()
+                + "\nID: " + item.getItemIdentifier()
+                + ((item.getMedia() == null) ? "" : "\nURL: " + item.getMedia().getDownload_url());
+    }
+
     /**
      * Searches the FeedItems of a specific Feed for a given string.
      *
@@ -535,7 +515,7 @@ public final class DBTasks {
                 List<Feed> items = new ArrayList<>();
                 if (cursor.moveToFirst()) {
                     do {
-                        items.add(Feed.fromCursor(cursor));
+                        items.add(FeedCursorMapper.convert(cursor));
                     } while (cursor.moveToNext());
                 }
                 setResult(items);

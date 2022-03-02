@@ -16,11 +16,11 @@ import java.util.HashSet;
 import java.util.Set;
 
 import de.danoeh.antennapod.R;
-import de.danoeh.antennapod.core.event.UnreadItemsUpdateEvent;
+import de.danoeh.antennapod.event.UnreadItemsUpdateEvent;
 import de.danoeh.antennapod.core.feed.SubscriptionsFilter;
 import de.danoeh.antennapod.core.feed.SubscriptionsFilterGroup;
 import de.danoeh.antennapod.core.preferences.UserPreferences;
-import de.danoeh.antennapod.view.RecursiveRadioGroup;
+import de.danoeh.antennapod.ui.common.RecursiveRadioGroup;
 
 public class SubscriptionsFilterDialog {
     public static void showDialog(Context context) {

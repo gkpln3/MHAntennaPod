@@ -14,9 +14,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 import de.danoeh.antennapod.R;
-import de.danoeh.antennapod.core.feed.FeedItemFilter;
+import de.danoeh.antennapod.model.feed.FeedItemFilter;
 import de.danoeh.antennapod.core.feed.FeedItemFilterGroup;
-import de.danoeh.antennapod.view.RecursiveRadioGroup;
+import de.danoeh.antennapod.ui.common.RecursiveRadioGroup;
 
 public abstract class FilterDialog {
 
@@ -52,7 +52,10 @@ public abstract class FilterDialog {
 
         for (String filterId : filterValues) {
             if (!TextUtils.isEmpty(filterId)) {
-                ((RadioButton) layout.findViewWithTag(filterId)).setChecked(true);
+                RadioButton button = layout.findViewWithTag(filterId);
+                if (button != null) {
+                    button.setChecked(true);
+                }
             }
         }
 

@@ -17,6 +17,7 @@ import java.io.Reader;
 import android.net.Uri;
 import android.widget.Toast;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -29,13 +30,12 @@ import java.util.stream.IntStream;
 
 import de.danoeh.antennapod.R;
 import de.danoeh.antennapod.activity.MainActivity;
-import de.danoeh.antennapod.activity.OpmlFeedChooserActivity;
-import de.danoeh.antennapod.activity.OpmlImportHolder;
-import de.danoeh.antennapod.asynctask.OpmlFeedQueuer;
-import de.danoeh.antennapod.asynctask.OpmlImportWorker;
 import de.danoeh.antennapod.core.export.opml.OpmlElement;
-import de.danoeh.antennapod.core.util.LangUtils;
+import de.danoeh.antennapod.core.export.opml.OpmlReader;
+import de.danoeh.antennapod.core.service.download.DownloadRequestCreator;
+import de.danoeh.antennapod.core.service.download.DownloadService;
 import de.danoeh.antennapod.core.util.download.AutoUpdateManager;
+import de.danoeh.antennapod.model.feed.Feed;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.OkHttpClient;
@@ -85,31 +85,21 @@ public class MHDefaultFeedLoader {
                     final InputStream opmlStream = new ByteArrayInputStream(opmlData.getBytes("UTF-8"));
                     activity.runOnUiThread(() ->
                     {
-                        Reader mReader = new InputStreamReader(opmlStream, LangUtils.UTF_8);
-                        OpmlImportWorker importWorker = new OpmlImportWorker(activity, mReader) {
-
-                            @Override
-                            protected void onPostExecute(ArrayList<OpmlElement> result) {
-                                super.onPostExecute(result);
-                                if (result != null) {
-                                    Log.d(TAG, "Parsing was successful");
-                                    OpmlImportHolder.setReadElements(result);
-                                    List<Integer> selectedPodcasts = new ArrayList<Integer>();
-                                    for (int i = 0; i < result.size(); i++) {
-                                        if (!unwantedPodcasts.contains(result.get(i).getXmlUrl()))
-                                            selectedPodcasts.add(i);
-                                        // Once we've added this podcast, theres no need to add it again ever...
-                                        MHDefaultFeedLoader.addUnwantedFeedToList(activity, result.get(i).getXmlUrl());
-                                    }
-
-                                    OpmlFeedQueuer queuer = new OpmlFeedQueuer(activity, toIntArray(selectedPodcasts));
-                                    queuer.executeAsync();
-                                } else {
-                                    Log.d(TAG, "Parser error occurred");
+                        try {
+                            Reader mReader = new InputStreamReader(opmlStream, StandardCharsets.UTF_8);
+                            OpmlReader reader = new OpmlReader();
+                            ArrayList<OpmlElement> elements = reader.readDocument(mReader);
+                            for (OpmlElement element : elements) {
+                                Feed feed = new Feed(element.getXmlUrl(), null, element.getText());
+                                if (!unwantedPodcasts.contains(element.getXmlUrl())) {
+                                    DownloadService.download(activity, false, DownloadRequestCreator.create(feed).build());
+                                    // Once we've added this podcast, theres no need to add it again ever...
+                                    MHDefaultFeedLoader.addUnwantedFeedToList(activity, element.getXmlUrl());
                                 }
                             }
-                        };
-                        importWorker.executeAsync();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                     });
                 }
                 catch (Exception e)

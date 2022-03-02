@@ -1,7 +1,7 @@
-- A long-standing wish of many: playing local files! In the 'Add podcast' screen simply tap 'Add local folder' and select a location on your phone! (@ByteHamster, @igoralmeida & @damoasda)
-- Pick a country for the 'Discover' screen (@tonytamsf)
-- Keyboard shortcuts (@asdoi)
-- Search the PodcastIndex.org database (@edwinhere)
-- Pull to refresh (@asdoi)
-- Playback speed & filter dialogs (@ByteHamster & @bws9000)
-- Smooth sleep timer volume (@olivoto)
+- Synchronization with Nextcloud ("GPodder Sync" app) (@thrillfall)
+- 'Duration' filter in podcast-specific auto-download settings (@thomasdomingos)
+- 'Downloaded episodes' screen in Android Auto (@ByteHamster)
+- Tags (previously folders): add to multiple podcasts via multi-select, rename tags (@vbh)
+- Accessibility: more TalkBack (@johnjohndoe @TacoTheDank)
+- Improvements for local feeds, mobile connections, physical keyboard/mouse support
+- Many minor & bigger bug fixes and other improvements

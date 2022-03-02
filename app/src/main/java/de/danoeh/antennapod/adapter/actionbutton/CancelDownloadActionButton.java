@@ -1,16 +1,15 @@
 package de.danoeh.antennapod.adapter.actionbutton;
 
 import android.content.Context;
-import androidx.annotation.AttrRes;
+import androidx.annotation.DrawableRes;
 import androidx.annotation.StringRes;
-import android.widget.Toast;
 
 import de.danoeh.antennapod.R;
-import de.danoeh.antennapod.core.feed.FeedItem;
-import de.danoeh.antennapod.core.feed.FeedMedia;
+import de.danoeh.antennapod.core.service.download.DownloadService;
+import de.danoeh.antennapod.model.feed.FeedItem;
+import de.danoeh.antennapod.model.feed.FeedMedia;
 import de.danoeh.antennapod.core.preferences.UserPreferences;
 import de.danoeh.antennapod.core.storage.DBWriter;
-import de.danoeh.antennapod.core.storage.DownloadRequester;
 
 public class CancelDownloadActionButton extends ItemActionButton {
 
@@ -25,18 +24,18 @@ public class CancelDownloadActionButton extends ItemActionButton {
     }
 
     @Override
-    @AttrRes
+    @DrawableRes
     public int getDrawable() {
-        return R.attr.navigation_cancel;
+        return R.drawable.ic_cancel;
     }
 
     @Override
     public void onClick(Context context) {
         FeedMedia media = item.getMedia();
-        DownloadRequester.getInstance().cancelDownload(context, media);
+        DownloadService.cancel(context, media.getDownload_url());
         if (UserPreferences.isEnableAutodownload()) {
-            DBWriter.setFeedItemAutoDownload(media.getItem(), false);
-            Toast.makeText(context, R.string.download_canceled_autodownload_enabled_msg, Toast.LENGTH_LONG).show();
+            item.disableAutoDownload();
+            DBWriter.setFeedItem(item);
         }
     }
 }

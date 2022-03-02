@@ -37,7 +37,6 @@ import de.danoeh.antennapod.activity.OnlineFeedViewActivity;
 import de.danoeh.antennapod.adapter.itunes.ItunesAdapter;
 import de.danoeh.antennapod.making_history.MHDiscoverListLoader;
 import de.danoeh.antennapod.making_history.MHDiscoverListSearcher;
-import de.danoeh.antennapod.menuhandler.MenuItemUtils;
 import dev.dworks.libs.astickyheader.SectionedGridAdapter;
 import dev.dworks.libs.astickyheader.SimpleSectionedGridAdapter;
 import io.reactivex.disposables.Disposable;

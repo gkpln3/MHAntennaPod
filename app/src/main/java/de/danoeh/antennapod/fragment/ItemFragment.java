@@ -6,7 +6,6 @@ import android.os.Bundle;
 import android.text.Layout;
 import android.text.TextUtils;
 import android.util.Log;
-import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -15,12 +14,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.content.ContextCompat;
-import androidx.core.text.TextUtilsCompat;
-import androidx.core.util.ObjectsCompat;
-import androidx.core.view.ViewCompat;
 import androidx.fragment.app.Fragment;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.resource.bitmap.FitCenter;
@@ -28,6 +22,7 @@ import com.bumptech.glide.load.resource.bitmap.RoundedCorners;
 import com.bumptech.glide.request.RequestOptions;
 import com.google.android.material.snackbar.Snackbar;
 import com.skydoves.balloon.ArrowOrientation;
+import com.skydoves.balloon.ArrowOrientationRules;
 import com.skydoves.balloon.Balloon;
 import com.skydoves.balloon.BalloonAnimation;
 import de.danoeh.antennapod.R;
@@ -44,21 +39,22 @@ import de.danoeh.antennapod.adapter.actionbutton.StreamActionButton;
 import de.danoeh.antennapod.adapter.actionbutton.VisitWebsiteActionButton;
 import de.danoeh.antennapod.core.event.DownloadEvent;
 import de.danoeh.antennapod.core.event.DownloaderUpdate;
-import de.danoeh.antennapod.core.event.FeedItemEvent;
-import de.danoeh.antennapod.core.event.PlayerStatusEvent;
-import de.danoeh.antennapod.core.event.UnreadItemsUpdateEvent;
-import de.danoeh.antennapod.core.feed.FeedItem;
-import de.danoeh.antennapod.core.feed.FeedMedia;
+import de.danoeh.antennapod.core.service.download.DownloadService;
+import de.danoeh.antennapod.event.FeedItemEvent;
+import de.danoeh.antennapod.event.PlayerStatusEvent;
+import de.danoeh.antennapod.event.UnreadItemsUpdateEvent;
+import de.danoeh.antennapod.model.feed.FeedItem;
+import de.danoeh.antennapod.model.feed.FeedMedia;
 import de.danoeh.antennapod.core.feed.util.ImageResourceUtils;
 import de.danoeh.antennapod.core.glide.ApGlideSettings;
 import de.danoeh.antennapod.core.preferences.UsageStatistics;
 import de.danoeh.antennapod.core.preferences.UserPreferences;
 import de.danoeh.antennapod.core.service.download.Downloader;
 import de.danoeh.antennapod.core.storage.DBReader;
-import de.danoeh.antennapod.core.storage.DownloadRequester;
 import de.danoeh.antennapod.core.util.Converter;
-import de.danoeh.antennapod.core.util.DateUtils;
-import de.danoeh.antennapod.core.util.ThemeUtils;
+import de.danoeh.antennapod.core.util.DateFormatter;
+import de.danoeh.antennapod.core.util.FeedItemUtil;
+import de.danoeh.antennapod.ui.common.ThemeUtils;
 import de.danoeh.antennapod.core.util.playback.PlaybackController;
 import de.danoeh.antennapod.core.util.playback.Timeline;
 import de.danoeh.antennapod.view.ShownotesWebView;
@@ -71,9 +67,9 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 /**
  * Displays information about a FeedItem and actions.
@@ -120,6 +116,7 @@ public class ItemFragment extends Fragment {
     private View butAction2;
     private ItemActionButton actionButton1;
     private ItemActionButton actionButton2;
+    private View noMediaLabel;
 
     private Disposable disposable;
     private PlaybackController controller;
@@ -150,7 +147,7 @@ public class ItemFragment extends Fragment {
         webvDescription = layout.findViewById(R.id.webvDescription);
         webvDescription.setTimecodeSelectedListener(time -> {
             if (controller != null && item.getMedia() != null && controller.getMedia() != null
-                    && ObjectsCompat.equals(item.getMedia().getIdentifier(), controller.getMedia().getIdentifier())) {
+                    && Objects.equals(item.getMedia().getIdentifier(), controller.getMedia().getIdentifier())) {
                 controller.seekTo(time);
             } else {
                 ((MainActivity) getActivity()).showSnackbarAbovePlayer(R.string.play_this_to_seek_position,
@@ -169,6 +166,7 @@ public class ItemFragment extends Fragment {
         butAction2Icon = layout.findViewById(R.id.butAction2Icon);
         butAction1Text = layout.findViewById(R.id.butAction1Text);
         butAction2Text = layout.findViewById(R.id.butAction2Text);
+        noMediaLabel = layout.findViewById(R.id.noMediaLabel);
 
         butAction1.setOnClickListener(v -> {
             if (actionButton1 instanceof StreamActionButton && !UserPreferences.isStreamOverDownload()
@@ -190,13 +188,15 @@ public class ItemFragment extends Fragment {
     }
 
     private void showOnDemandConfigBalloon(boolean offerStreaming) {
-        boolean isLocaleRtl = TextUtilsCompat.getLayoutDirectionFromLocale(Locale.getDefault())
-                == ViewCompat.LAYOUT_DIRECTION_RTL;
+        boolean isLocaleRtl = TextUtils.getLayoutDirectionFromLocale(Locale.getDefault())
+                == View.LAYOUT_DIRECTION_RTL;
         Balloon balloon = new Balloon.Builder(getContext())
                 .setArrowOrientation(ArrowOrientation.TOP)
+                .setArrowOrientationRules(ArrowOrientationRules.ALIGN_FIXED)
                 .setArrowPosition(0.25f + ((isLocaleRtl ^ offerStreaming) ? 0f : 0.5f))
                 .setWidthRatio(1.0f)
-                .isRtlSupport(true)
+                .setMarginLeft(8)
+                .setMarginRight(8)
                 .setBackgroundColor(ThemeUtils.getColorFromAttr(getContext(), R.attr.colorSecondary))
                 .setBalloonAnimation(BalloonAnimation.OVERSHOOT)
                 .setLayout(R.layout.popup_bubble_view)
@@ -224,22 +224,17 @@ public class ItemFragment extends Fragment {
     }
 
     @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-        load();
-    }
-
-    @Override
-    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
-    }
-
-    @Override
     public void onStart() {
         super.onStart();
         EventBus.getDefault().register(this);
-        controller = new PlaybackController(getActivity());
+        controller = new PlaybackController(getActivity()) {
+            @Override
+            public void loadMediaInfo() {
+                // Do nothing
+            }
+        };
         controller.init();
+        load();
     }
 
     @Override
@@ -286,19 +281,24 @@ public class ItemFragment extends Fragment {
         txtvTitle.setText(item.getTitle());
 
         if (item.getPubDate() != null) {
-            String pubDateStr = DateUtils.formatAbbrev(getActivity(), item.getPubDate());
+            String pubDateStr = DateFormatter.formatAbbrev(getActivity(), item.getPubDate());
             txtvPublished.setText(pubDateStr);
-            txtvPublished.setContentDescription(DateUtils.formatForAccessibility(getContext(), item.getPubDate()));
+            txtvPublished.setContentDescription(DateFormatter.formatForAccessibility(getContext(), item.getPubDate()));
         }
 
+        RequestOptions options = new RequestOptions()
+                .error(R.color.light_gray)
+                .diskCacheStrategy(ApGlideSettings.AP_DISK_CACHE_STRATEGY)
+                .transforms(new FitCenter(),
+                        new RoundedCorners((int) (4 * getResources().getDisplayMetrics().density)))
+                .dontAnimate();
+
         Glide.with(getActivity())
-                .load(ImageResourceUtils.getImageLocation(item))
-                .apply(new RequestOptions()
-                    .error(R.color.light_gray)
-                    .diskCacheStrategy(ApGlideSettings.AP_DISK_CACHE_STRATEGY)
-                    .transforms(new FitCenter(),
-                            new RoundedCorners((int) (4 * getResources().getDisplayMetrics().density)))
-                    .dontAnimate())
+                .load(item.getImageLocation())
+                .error(Glide.with(getActivity())
+                        .load(ImageResourceUtils.getFallbackImageLocation(item))
+                        .apply(options))
+                .apply(options)
                 .into(imgvCover);
         updateButtons();
     }
@@ -319,13 +319,15 @@ public class ItemFragment extends Fragment {
         if (media == null) {
             actionButton1 = new MarkAsPlayedActionButton(item);
             actionButton2 = new VisitWebsiteActionButton(item);
+            noMediaLabel.setVisibility(View.VISIBLE);
         } else {
+            noMediaLabel.setVisibility(View.GONE);
             if (media.getDuration() > 0) {
                 txtvDuration.setText(Converter.getDurationStringLong(media.getDuration()));
                 txtvDuration.setContentDescription(
                         Converter.getDurationStringLocalized(getContext(), media.getDuration()));
             }
-            if (media.isCurrentlyPlaying()) {
+            if (FeedItemUtil.isCurrentlyPlaying(media)) {
                 actionButton1 = new PauseActionButton(item);
             } else if (item.getFeed().isLocalFeed()) {
                 actionButton1 = new PlayLocalActionButton(item);
@@ -334,10 +336,10 @@ public class ItemFragment extends Fragment {
             } else {
                 actionButton1 = new StreamActionButton(item);
             }
-            if (DownloadRequester.getInstance().isDownloadingFile(media)) {
+            if (DownloadService.isDownloadingFile(media.getDownload_url())) {
                 actionButton2 = new CancelDownloadActionButton(item);
             } else if (!media.isDownloaded()) {
-                actionButton2 = new DownloadActionButton(item, false);
+                actionButton2 = new DownloadActionButton(item);
             } else {
                 actionButton2 = new DeleteActionButton(item);
             }
@@ -345,15 +347,12 @@ public class ItemFragment extends Fragment {
 
         butAction1Text.setText(actionButton1.getLabel());
         butAction1Text.setTransformationMethod(null);
-        TypedValue typedValue = new TypedValue();
-        getContext().getTheme().resolveAttribute(actionButton1.getDrawable(), typedValue, true);
-        butAction1Icon.setImageResource(typedValue.resourceId);
+        butAction1Icon.setImageResource(actionButton1.getDrawable());
         butAction1.setVisibility(actionButton1.getVisibility());
 
         butAction2Text.setText(actionButton2.getLabel());
         butAction2Text.setTransformationMethod(null);
-        getContext().getTheme().resolveAttribute(actionButton2.getDrawable(), typedValue, true);
-        butAction2Icon.setImageResource(typedValue.resourceId);
+        butAction2Icon.setImageResource(actionButton2.getDrawable());
         butAction2.setVisibility(actionButton2.getVisibility());
     }
 
@@ -389,7 +388,7 @@ public class ItemFragment extends Fragment {
         long mediaId = item.getMedia().getId();
         if (ArrayUtils.contains(update.mediaIds, mediaId)) {
             if (itemsLoaded && getActivity() != null) {
-                updateAppearance();
+                updateButtons();
             }
         }
     }
@@ -427,7 +426,9 @@ public class ItemFragment extends Fragment {
         FeedItem feedItem = DBReader.getFeedItem(itemId);
         Context context = getContext();
         if (feedItem != null && context != null) {
-            Timeline t = new Timeline(context, feedItem);
+            int duration = feedItem.getMedia() != null ? feedItem.getMedia().getDuration() : Integer.MAX_VALUE;
+            DBReader.loadDescriptionOfFeedItem(feedItem);
+            Timeline t = new Timeline(context, feedItem.getDescription(), duration);
             webviewData = t.processShownotes();
         }
         return feedItem;
