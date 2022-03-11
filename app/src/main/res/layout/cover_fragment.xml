@@ -1,15 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:squareImageView="http://schemas.android.com/apk/de.danoeh.antennapod"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/cover_fragment"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:gravity="center"
     android:orientation="horizontal"
-    android:padding="8dp"
-    android:gravity="center">
+    android:padding="8dp">
 
     <Space
         android:id="@+id/counterweight"
@@ -17,30 +16,34 @@
         android:layout_height="match_parent"
         android:layout_weight="1" />
 
-    <de.danoeh.antennapod.ui.common.SquareImageView
-        android:id="@+id/imgvCover"
-        android:layout_width="0dp"
-        android:layout_height="200dp"
-        android:layout_gravity="center"
-        android:layout_marginHorizontal="16dp"
-        android:layout_weight="0"
-        android:foreground="?attr/selectableItemBackgroundBorderless"
-        android:importantForAccessibility="no"
-        android:scaleType="fitCenter"
-        squareImageView:direction="height"
-        tools:src="@android:drawable/sym_def_app_icon" />
     <FrameLayout
         android:id="@+id/adsWebViewHolder"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:alpha="0" >
+        android:layout_width="0dp"
+        android:layout_height="200dp"
+        android:layout_weight="0"
+        android:layout_gravity="center"
+        android:layout_marginHorizontal="16dp"
+        android:alpha="1">
+
+        <de.danoeh.antennapod.ui.common.SquareImageView
+            android:id="@+id/imgvCover"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:foreground="?attr/selectableItemBackgroundBorderless"
+            android:importantForAccessibility="no"
+            android:scaleType="fitCenter"
+            squareImageView:direction="height"
+            tools:src="@android:drawable/sym_def_app_icon" />
 
         <WebView
             android:id="@+id/adsWebView"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="match_parent"
+            android:scrollIndicators="none"
+            android:alpha="0" />
 
     </FrameLayout>
+
     <LinearLayout
         android:id="@+id/cover_fragment_text_container"
         android:layout_width="match_parent"
@@ -107,12 +110,12 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="8dp"
+            android:layout_weight="1"
             android:background="@drawable/grey_border"
             android:clickable="true"
             android:focusable="true"
             android:gravity="center"
             android:minWidth="150dp"
-            android:layout_weight="1"
             android:orientation="horizontal">
 
             <ImageView
@@ -127,9 +130,9 @@
                 android:id="@+id/shownotes_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:ellipsize="none"
-                android:layout_marginLeft="2dp"
                 android:layout_marginStart="2dp"
+                android:layout_marginLeft="2dp"
+                android:ellipsize="none"
                 android:gravity="center_horizontal"
                 android:maxLines="2"
                 android:text="@string/shownotes_label"

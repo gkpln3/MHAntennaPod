@@ -62,6 +62,7 @@ import java.util.regex.Matcher;
 
 import de.danoeh.antennapod.R;
 import de.danoeh.antennapod.activity.MainActivity;
+import de.danoeh.antennapod.core.storage.DBReader;
 import de.danoeh.antennapod.event.playback.PlaybackPositionEvent;
 import de.danoeh.antennapod.model.feed.FeedMedia;
 import de.danoeh.antennapod.core.feed.util.ImageResourceUtils;
@@ -187,6 +188,9 @@ public class CoverFragment extends Fragment {
     private void configureAdsWebView(@NonNull Playable media) {
         try {
             advUrl = null;
+            if (!(media instanceof FeedMedia)) return;
+
+            DBReader.loadDescriptionOfFeedItem(((FeedMedia) media).getItem());
             if (media.getDescription() != null) {
                 Matcher matcher = Patterns.WEB_URL.matcher(media.getDescription());
                 while (matcher.find())
@@ -196,7 +200,7 @@ public class CoverFragment extends Fragment {
             if (advUrl == null || !isMHAdsURL(advUrl)) {
                 advUrl = null;
 
-                adsWebViewHolder.animate().setDuration(100).alpha(0f);
+                adsWebView.animate().setDuration(100).alpha(0f);
                 return;
             }
 
@@ -205,14 +209,14 @@ public class CoverFragment extends Fragment {
                 public void onPageFinished(WebView view, String url) {
                     super.onPageFinished(view, url);
 
-                    adsWebViewHolder.animate().alpha(1f);
+                    adsWebView.animate().alpha(1f);
                     adsWebView.setVisibility(View.VISIBLE);
 
                     if (getActivity() != null) {
                         getActivity().getOnBackPressedDispatcher().addCallback(new OnBackPressedCallback(true) {
                             @Override
                             public void handleOnBackPressed() {
-                                adsWebViewHolder.animate().setDuration(100).alpha(0f).withEndAction(() ->
+                                adsWebView.animate().setDuration(100).alpha(0f).withEndAction(() ->
                                 {
                                     this.setEnabled(false);
                                     if (getActivity() != null)
@@ -289,6 +293,7 @@ public class CoverFragment extends Fragment {
         displayedChapterIndex = -1;
         refreshChapterData(ChapterUtils.getCurrentChapterIndex(media, media.getPosition())); //calls displayCoverImage
         updateChapterControlVisibility();
+        configureAdsWebView(media);
     }
 
     private void updateChapterControlVisibility() {
@@ -444,7 +449,7 @@ public class CoverFragment extends Fragment {
         LinearLayout mainContainer = getView().findViewById(R.id.cover_fragment);
         LinearLayout textContainer = getView().findViewById(R.id.cover_fragment_text_container);
 
-        LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) imgvCover.getLayoutParams();
+        LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) adsWebViewHolder.getLayoutParams();
         LinearLayout.LayoutParams textParams = (LinearLayout.LayoutParams) textContainer.getLayoutParams();
         double ratio = (float) newConfig.screenHeightDp / (float) newConfig.screenWidthDp;
 
@@ -462,7 +467,7 @@ public class CoverFragment extends Fragment {
                 params.width = (int) (convertDpToPixel(newConfig.screenWidthDp) * percentageWidth);
                 params.height = params.width;
                 textParams.weight = 0;
-                imgvCover.setLayoutParams(params);
+                adsWebViewHolder.setLayoutParams(params);
             }
         } else {
             double percentageHeight = ratio * 0.6;
@@ -471,7 +476,7 @@ public class CoverFragment extends Fragment {
                 params.height = (int) (convertDpToPixel(newConfig.screenHeightDp) * percentageHeight);
                 params.width = params.height;
                 textParams.weight = 1;
-                imgvCover.setLayoutParams(params);
+                adsWebViewHolder.setLayoutParams(params);
             }
 
             spacerVisible = false;
