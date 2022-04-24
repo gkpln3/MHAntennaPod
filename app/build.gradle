@@ -16,6 +16,7 @@ android {
 		versionCode 162050095
         versionName "2.5.0"
         applicationId "de.danoeh.antennapod_mh"
+        multiDexEnabled true
 
         def commit = ""
         try {

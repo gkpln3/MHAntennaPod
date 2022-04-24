@@ -119,8 +119,9 @@ public class MHDefaultFeedLoader {
     {
         SharedPreferences prefs = context.getSharedPreferences(SHARED_PREFERENCES_NAME, Context.MODE_MULTI_PROCESS);
         Set<String> unwantedPodcasts = prefs.getStringSet(UNWANTED_FEEDS_LIST_PREF_NAME, new HashSet<String>());
-        unwantedPodcasts.add(feedURL);
-        prefs.edit().putStringSet(UNWANTED_FEEDS_LIST_PREF_NAME, unwantedPodcasts).apply();
+        Set<String> newUnwantedPodcasts = new HashSet<String>(unwantedPodcasts);
+        newUnwantedPodcasts.add(feedURL);
+        prefs.edit().putStringSet(UNWANTED_FEEDS_LIST_PREF_NAME, newUnwantedPodcasts).apply();
     }
 
     private static int[] toIntArray(List<Integer> list)  {

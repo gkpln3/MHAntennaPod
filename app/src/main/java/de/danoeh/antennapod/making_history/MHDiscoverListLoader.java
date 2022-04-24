@@ -39,7 +39,7 @@ public class MHDiscoverListLoader {
             {
                 List<PodcastSearchResult> result = new ArrayList<>();
                 for (PodcastSearchResult podcast : podcasts) {
-                    if ("Top".equalsIgnoreCase(podcast.category)) { // we dont like mkyong
+                    if ("Top".equalsIgnoreCase(podcast.category)) {
                         result.add(podcast);
                     }
                 }
