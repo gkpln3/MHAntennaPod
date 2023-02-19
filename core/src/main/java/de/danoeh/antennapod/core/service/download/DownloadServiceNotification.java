@@ -140,7 +140,7 @@ public class DownloadServiceNotification {
         // a download report is created if at least one download has failed
         // (excluding failed image downloads)
         for (DownloadStatus status : reportQueue) {
-            if (status.isSuccessful()) {
+            if (status != null && status.isSuccessful()) {
                 successfulDownloads++;
                 createReport |= showAutoDownloadReport && !status.isInitiatedByUser() && status.getFeedfileType() == FeedMedia.FEEDFILETYPE_FEEDMEDIA;
             } else if (!status.isCancelled()) {
