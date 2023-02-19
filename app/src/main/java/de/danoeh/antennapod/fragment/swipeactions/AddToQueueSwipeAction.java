@@ -18,7 +18,7 @@ public class AddToQueueSwipeAction implements SwipeAction {
 
     @Override
     public int getActionIcon() {
-        return R.drawable.ic_playlist;
+        return R.drawable.ic_playlist_play;
     }
 
     @Override
@@ -41,7 +41,7 @@ public class AddToQueueSwipeAction implements SwipeAction {
     }
 
     @Override
-    public boolean willRemove(FeedItemFilter filter) {
+    public boolean willRemove(FeedItemFilter filter, FeedItem item) {
         return filter.showQueued || filter.showNew;
     }
 }

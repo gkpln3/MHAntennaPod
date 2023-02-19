@@ -42,10 +42,11 @@ import de.danoeh.antennapod.core.storage.DBReader;
 import de.danoeh.antennapod.core.storage.DBTasks;
 import de.danoeh.antennapod.core.util.IntentUtils;
 import de.danoeh.antennapod.core.util.syndication.HtmlToPlainText;
-import de.danoeh.antennapod.fragment.preferences.StatisticsFragment;
 import de.danoeh.antennapod.menuhandler.FeedMenuHandler;
 import de.danoeh.antennapod.model.feed.Feed;
 import de.danoeh.antennapod.model.feed.FeedFunding;
+import de.danoeh.antennapod.ui.statistics.StatisticsFragment;
+import de.danoeh.antennapod.ui.statistics.feed.FeedStatisticsFragment;
 import de.danoeh.antennapod.view.ToolbarIconTintManager;
 import io.reactivex.Completable;
 import io.reactivex.Maybe;
@@ -56,7 +57,7 @@ import io.reactivex.schedulers.Schedulers;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Iterator;
 
 /**
  * Displays information about a feed.
@@ -123,7 +124,7 @@ public class FeedInfoFragment extends Fragment implements Toolbar.OnMenuItemClic
             protected void doTint(Context themedContext) {
                 toolbar.getMenu().findItem(R.id.visit_website_item)
                         .setIcon(AppCompatResources.getDrawable(themedContext, R.drawable.ic_web));
-                toolbar.getMenu().findItem(R.id.share_parent)
+                toolbar.getMenu().findItem(R.id.share_item)
                         .setIcon(AppCompatResources.getDrawable(themedContext, R.drawable.ic_share));
             }
         };
@@ -138,6 +139,7 @@ public class FeedInfoFragment extends Fragment implements Toolbar.OnMenuItemClic
         infoContainer = root.findViewById(R.id.infoContainer);
         root.findViewById(R.id.butShowInfo).setVisibility(View.INVISIBLE);
         root.findViewById(R.id.butShowSettings).setVisibility(View.INVISIBLE);
+        root.findViewById(R.id.butFilter).setVisibility(View.INVISIBLE);
         // https://github.com/bumptech/glide/issues/529
         imgvBackground.setColorFilter(new LightingColorFilter(0xff828282, 0x000000));
 
@@ -183,6 +185,9 @@ public class FeedInfoFragment extends Fragment implements Toolbar.OnMenuItemClic
     @Override
     public void onConfigurationChanged(@NonNull Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
+        if (header == null || infoContainer == null) {
+            return;
+        }
         int horizontalSpacing = (int) getResources().getDimension(R.dimen.additional_horizontal_spacing);
         header.setPadding(horizontalSpacing, header.getPaddingTop(), horizontalSpacing, header.getPaddingBottom());
         infoContainer.setPadding(horizontalSpacing, infoContainer.getPaddingTop(),
@@ -231,13 +236,24 @@ public class FeedInfoFragment extends Fragment implements Toolbar.OnMenuItemClic
         } else {
             lblSupport.setVisibility(View.VISIBLE);
             ArrayList<FeedFunding> fundingList = feed.getPaymentLinks();
-            StringBuilder str = new StringBuilder();
-            HashSet<String> seen = new HashSet<String>();
-            for (FeedFunding funding : fundingList) {
-                if (seen.contains(funding.url)) {
-                    continue;
+
+            // Filter for duplicates, but keep items in the order that they have in the feed.
+            Iterator<FeedFunding> i = fundingList.iterator();
+            while (i.hasNext()) {
+                FeedFunding funding = i.next();
+                for (FeedFunding other : fundingList) {
+                    if (TextUtils.equals(other.url, funding.url)) {
+                        if (other.content != null && funding.content != null
+                                && other.content.length() > funding.content.length()) {
+                            i.remove();
+                            break;
+                        }
+                    }
                 }
-                seen.add(funding.url);
+            }
+
+            StringBuilder str = new StringBuilder();
+            for (FeedFunding funding : fundingList) {
                 str.append(funding.content.isEmpty()
                         ? getContext().getResources().getString(R.string.support_podcast)
                         : funding.content).append(" ").append(funding.url);
@@ -260,13 +276,8 @@ public class FeedInfoFragment extends Fragment implements Toolbar.OnMenuItemClic
     }
 
     private void refreshToolbarState() {
-        boolean shareLinkVisible = feed != null && feed.getLink() != null;
-        boolean downloadUrlVisible = feed != null && !feed.isLocalFeed();
-
         toolbar.getMenu().findItem(R.id.reconnect_local_folder).setVisible(feed != null && feed.isLocalFeed());
-        toolbar.getMenu().findItem(R.id.share_download_url_item).setVisible(downloadUrlVisible);
-        toolbar.getMenu().findItem(R.id.share_link_item).setVisible(shareLinkVisible);
-        toolbar.getMenu().findItem(R.id.share_parent).setVisible(downloadUrlVisible || shareLinkVisible);
+        toolbar.getMenu().findItem(R.id.share_item).setVisible(feed != null && !feed.isLocalFeed());
         toolbar.getMenu().findItem(R.id.visit_website_item).setVisible(feed != null && feed.getLink() != null
                 && IntentUtils.isCallable(getContext(), new Intent(Intent.ACTION_VIEW, Uri.parse(feed.getLink()))));
     }

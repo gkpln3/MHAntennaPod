@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 import de.danoeh.antennapod.R;
 import de.danoeh.antennapod.core.preferences.UserPreferences;
 import de.danoeh.antennapod.core.service.download.AntennapodHttpClient;
-import de.danoeh.antennapod.core.service.download.ProxyConfig;
+import de.danoeh.antennapod.model.download.ProxyConfig;
 import io.reactivex.Completable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
@@ -165,7 +165,9 @@ public class ProxyDialog {
         if (!TextUtils.isEmpty(port)) {
             portValue = Integer.parseInt(port);
         }
-        UserPreferences.setProxyConfig(new ProxyConfig(typeEnum, host, portValue, username, password));
+        ProxyConfig config = new ProxyConfig(typeEnum, host, portValue, username, password);
+        UserPreferences.setProxyConfig(config);
+        AntennapodHttpClient.setProxyConfig(config);
     }
 
     private final TextWatcher requireTestOnChange = new TextWatcher() {

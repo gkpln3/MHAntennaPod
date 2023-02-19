@@ -76,7 +76,7 @@ public class AutomaticDownloadAlgorithm {
 
                 int autoDownloadableEpisodes = candidates.size();
                 int downloadedEpisodes = DBReader.getNumberOfDownloadedEpisodes();
-                int deletedEpisodes = UserPreferences.getEpisodeCleanupAlgorithm()
+                int deletedEpisodes = EpisodeCleanupAlgorithmFactory.build()
                         .makeRoomForEpisodes(context, autoDownloadableEpisodes);
                 boolean cacheIsUnlimited =
                         UserPreferences.getEpisodeCacheSize() == UserPreferences.getEpisodeCacheSizeUnlimited();
@@ -96,7 +96,7 @@ public class AutomaticDownloadAlgorithm {
                     List<DownloadRequest> requests = new ArrayList<>();
                     for (FeedItem episode : itemsToDownload) {
                         DownloadRequest.Builder request = DownloadRequestCreator.create(episode.getMedia());
-                        request.setInitiatedByUser(false);
+                        request.withInitiatedByUser(false);
                         requests.add(request.build());
                     }
                     DownloadService.download(context, false, requests.toArray(new DownloadRequest[0]));

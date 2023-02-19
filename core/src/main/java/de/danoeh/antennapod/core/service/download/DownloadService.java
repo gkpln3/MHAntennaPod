@@ -18,8 +18,11 @@ import androidx.annotation.VisibleForTesting;
 import androidx.core.app.ServiceCompat;
 
 import androidx.core.content.ContextCompat;
+import de.danoeh.antennapod.core.BuildConfig;
 import de.danoeh.antennapod.core.R;
 import de.danoeh.antennapod.core.feed.LocalFeedUpdater;
+import de.danoeh.antennapod.core.storage.EpisodeCleanupAlgorithmFactory;
+import de.danoeh.antennapod.model.download.DownloadStatus;
 import org.apache.commons.io.FileUtils;
 import org.greenrobot.eventbus.EventBus;
 
@@ -50,7 +53,7 @@ import de.danoeh.antennapod.core.service.download.handler.PostDownloaderTask;
 import de.danoeh.antennapod.core.storage.DBReader;
 import de.danoeh.antennapod.core.storage.DBTasks;
 import de.danoeh.antennapod.core.storage.DBWriter;
-import de.danoeh.antennapod.core.util.DownloadError;
+import de.danoeh.antennapod.model.download.DownloadError;
 
 /**
  * Manages the download of feedfiles in the app. Downloads can be enqueued via the startService intent.
@@ -139,9 +142,6 @@ public class DownloadService extends Service {
     }
 
     public static void download(Context context, boolean cleanupMedia, DownloadRequest... requests) {
-        if (requests.length > 100) {
-            throw new IllegalArgumentException("Android silently drops intent payloads that are too large");
-        }
         ArrayList<DownloadRequest> requestsToSend = new ArrayList<>();
         for (DownloadRequest request : requests) {
             if (!isDownloadingFile(request.getSource())) {
@@ -150,7 +150,15 @@ public class DownloadService extends Service {
         }
         if (requestsToSend.isEmpty()) {
             return;
+        } else if (requestsToSend.size() > 100) {
+            if (BuildConfig.DEBUG) {
+                throw new IllegalArgumentException("Android silently drops intent payloads that are too large");
+            } else {
+                Log.d(TAG, "Too many download requests. Dropping some to avoid Android dropping all.");
+                requestsToSend = new ArrayList<>(requestsToSend.subList(0, 100));
+            }
         }
+
         Intent launchIntent = new Intent(context, DownloadService.class);
         launchIntent.putParcelableArrayListExtra(DownloadService.EXTRA_REQUESTS, requestsToSend);
         if (cleanupMedia) {
@@ -300,7 +308,11 @@ public class DownloadService extends Service {
     private void performLocalFeedRefresh(Downloader downloader, DownloadRequest request) {
         try {
             Feed feed = DBReader.getFeed(request.getFeedfileId());
-            LocalFeedUpdater.updateFeed(feed, DownloadService.this);
+            LocalFeedUpdater.updateFeed(feed, DownloadService.this, (scanned, totalFiles) -> {
+                request.setSize(totalFiles);
+                request.setSoFar(scanned);
+                request.setProgressPercent((int) (100.0 * scanned / totalFiles));
+            });
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -333,6 +345,9 @@ public class DownloadService extends Service {
                 if (!request.isInitiatedByUser()) {
                     // Was stored in the database before and not initiated manually
                     newEpisodesNotification.showIfNeeded(DownloadService.this, task.getSavedFeed());
+                }
+                if (downloader.permanentRedirectUrl != null) {
+                    DBWriter.updateFeedDownloadURL(request.getSource(), downloader.permanentRedirectUrl);
                 }
             } else {
                 DBWriter.setFeedLastUpdateFailed(request.getFeedfileId(), true);
@@ -447,7 +462,7 @@ public class DownloadService extends Service {
         Log.d(TAG, "Received enqueue request. #requests=" + requests.size());
 
         if (intent.getBooleanExtra(EXTRA_CLEANUP_MEDIA, false)) {
-            UserPreferences.getEpisodeCleanupAlgorithm().makeRoomForEpisodes(getApplicationContext(), requests.size());
+            EpisodeCleanupAlgorithmFactory.build().makeRoomForEpisodes(getApplicationContext(), requests.size());
         }
 
         for (DownloadRequest request : requests) {
@@ -500,7 +515,7 @@ public class DownloadService extends Service {
         for (Feed feed : feeds) {
             if (feed.getPreferences().getKeepUpdated()) {
                 DownloadRequest.Builder builder = DownloadRequestCreator.create(feed);
-                builder.setInitiatedByUser(initiatedByUser);
+                builder.withInitiatedByUser(initiatedByUser);
                 addNewRequest(builder.build());
             }
         }
@@ -511,6 +526,9 @@ public class DownloadService extends Service {
     private void addNewRequest(@NonNull DownloadRequest request) {
         if (isDownloadingFile(request.getSource())) {
             Log.d(TAG, "Skipped enqueueing request. Already running.");
+            return;
+        } else if (downloadHandleExecutor.isShutdown()) {
+            Log.d(TAG, "Skipped enqueueing request. Service is already shutting down.");
             return;
         }
         Log.d(TAG, "Add new request: " + request.getSource());
@@ -546,7 +564,7 @@ public class DownloadService extends Service {
      *
      * @param status the download that is going to be saved
      */
-    private void saveDownloadStatus(DownloadStatus status) {
+    private void saveDownloadStatus(@NonNull DownloadStatus status) {
         reportQueue.add(status);
         DBWriter.addDownloadStatus(status);
     }
@@ -656,7 +674,6 @@ public class DownloadService extends Service {
         if (notificationUpdater != null) {
             notificationUpdater.run();
         }
-        downloadEnqueueExecutor.shutdown(); // Do not accept new downloads
         cancelNotificationUpdater();
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE);
         stopSelf();

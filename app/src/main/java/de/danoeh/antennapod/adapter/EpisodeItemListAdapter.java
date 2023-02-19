@@ -48,6 +48,7 @@ public class EpisodeItemListAdapter extends SelectableAdapter<EpisodeItemViewHol
     public void updateItems(List<FeedItem> items) {
         episodes = items;
         notifyDataSetChanged();
+        updateTitle();
     }
 
     @Override
@@ -84,7 +85,7 @@ public class EpisodeItemListAdapter extends SelectableAdapter<EpisodeItemViewHol
         });
         holder.itemView.setOnCreateContextMenuListener(this);
         holder.itemView.setOnLongClickListener(v -> {
-            longPressedItem = getItem(holder.getBindingAdapterPosition());
+            longPressedItem = item;
             longPressedPosition = holder.getBindingAdapterPosition();
             return false;
         });
@@ -92,7 +93,7 @@ public class EpisodeItemListAdapter extends SelectableAdapter<EpisodeItemViewHol
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 if (e.isFromSource(InputDevice.SOURCE_MOUSE)
                         && e.getButtonState() == MotionEvent.BUTTON_SECONDARY) {
-                    longPressedItem = getItem(holder.getBindingAdapterPosition());
+                    longPressedItem = item;
                     longPressedPosition = holder.getBindingAdapterPosition();
                     return false;
                 }
@@ -127,6 +128,7 @@ public class EpisodeItemListAdapter extends SelectableAdapter<EpisodeItemViewHol
         holder.itemView.setOnClickListener(null);
         holder.itemView.setOnCreateContextMenuListener(null);
         holder.itemView.setOnLongClickListener(null);
+        holder.itemView.setOnTouchListener(null);
         holder.secondaryActionButton.setOnClickListener(null);
         holder.dragHandle.setOnTouchListener(null);
         holder.coverHolder.setOnTouchListener(null);
@@ -193,6 +195,7 @@ public class EpisodeItemListAdapter extends SelectableAdapter<EpisodeItemViewHol
             setSelected(0, longPressedPosition, true);
             return true;
         } else if (item.getItemId() == R.id.select_all_below) {
+            shouldSelectLazyLoadedItems = true;
             setSelected(longPressedPosition + 1, getItemCount(), true);
             return true;
         }

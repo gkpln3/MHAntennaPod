@@ -35,11 +35,11 @@ import de.danoeh.antennapod.core.storage.DBTasks;
 import de.danoeh.antennapod.model.feed.SortOrder;
 import de.danoeh.antennapod.databinding.AddfeedBinding;
 import de.danoeh.antennapod.databinding.EditTextDialogBinding;
-import de.danoeh.antennapod.discovery.CombinedSearcher;
-import de.danoeh.antennapod.discovery.FyydPodcastSearcher;
-import de.danoeh.antennapod.discovery.ItunesPodcastSearcher;
-import de.danoeh.antennapod.discovery.PodcastIndexPodcastSearcher;
-import de.danoeh.antennapod.fragment.gpodnet.GpodnetMainFragment;
+import de.danoeh.antennapod.net.discovery.CombinedSearcher;
+import de.danoeh.antennapod.net.discovery.FyydPodcastSearcher;
+import de.danoeh.antennapod.net.discovery.GpodnetPodcastSearcher;
+import de.danoeh.antennapod.net.discovery.ItunesPodcastSearcher;
+import de.danoeh.antennapod.net.discovery.PodcastIndexPodcastSearcher;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
@@ -84,7 +84,7 @@ public class AddFeedFragment extends Fragment {
         viewBinding.searchFyydButton.setOnClickListener(v
                 -> activity.loadChildFragment(OnlineSearchFragment.newInstance(FyydPodcastSearcher.class)));
         viewBinding.searchGPodderButton.setOnClickListener(v
-                -> activity.loadChildFragment(new GpodnetMainFragment()));
+                -> activity.loadChildFragment(OnlineSearchFragment.newInstance(GpodnetPodcastSearcher.class)));
         viewBinding.searchPodcastIndexButton.setOnClickListener(v
                 -> activity.loadChildFragment(OnlineSearchFragment.newInstance(PodcastIndexPodcastSearcher.class)));
 
@@ -141,9 +141,12 @@ public class AddFeedFragment extends Fragment {
         alertViewBinding.urlEditText.setHint(R.string.add_podcast_by_url_hint);
 
         ClipboardManager clipboard = (ClipboardManager) getContext().getSystemService(Context.CLIPBOARD_SERVICE);
-        String clipboardContent = clipboard.getText() != null ? clipboard.getText().toString() : "";
-        if (clipboardContent.trim().startsWith("http")) {
-            alertViewBinding.urlEditText.setText(clipboardContent.trim());
+        final ClipData clipData = clipboard.getPrimaryClip();
+        if (clipData != null && clipData.getItemCount() > 0 && clipData.getItemAt(0).getText() != null) {
+            final String clipboardContent = clipData.getItemAt(0).getText().toString();
+            if (clipboardContent.trim().startsWith("http")) {
+                alertViewBinding.urlEditText.setText(clipboardContent.trim());
+            }
         }
         builder.setView(alertViewBinding.getRoot());
         builder.setPositiveButton(R.string.confirm_label,

@@ -36,6 +36,7 @@ import androidx.core.view.WindowCompat;
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
 import com.bumptech.glide.Glide;
 import de.danoeh.antennapod.R;
+import de.danoeh.antennapod.dialog.VariableSpeedDialog;
 import de.danoeh.antennapod.event.playback.BufferUpdateEvent;
 import de.danoeh.antennapod.event.playback.PlaybackPositionEvent;
 import de.danoeh.antennapod.event.PlayerErrorEvent;
@@ -49,7 +50,6 @@ import de.danoeh.antennapod.core.util.Converter;
 import de.danoeh.antennapod.core.util.FeedItemUtil;
 import de.danoeh.antennapod.core.util.IntentUtils;
 import de.danoeh.antennapod.core.util.ShareUtils;
-import de.danoeh.antennapod.core.util.StorageUtils;
 import de.danoeh.antennapod.core.util.TimeSpeedConverter;
 import de.danoeh.antennapod.core.util.gui.PictureInPictureUtil;
 import de.danoeh.antennapod.core.util.playback.PlaybackController;
@@ -91,6 +91,7 @@ public class VideoplayerActivity extends CastEnabledActivity implements SeekBar.
     private PlaybackController controller;
     private boolean showTimeLeft = false;
     private boolean isFavorite = false;
+    private boolean switchToAudioOnly = false;
     private Disposable disposable;
     private float prog;
 
@@ -105,7 +106,6 @@ public class VideoplayerActivity extends CastEnabledActivity implements SeekBar.
         super.onCreate(savedInstanceState);
 
         Log.d(TAG, "onCreate()");
-        StorageUtils.checkStorageAvailability(this);
 
         getWindow().setFormat(PixelFormat.TRANSPARENT);
         viewBinding = VideoplayerActivityBinding.inflate(LayoutInflater.from(this));
@@ -118,7 +118,7 @@ public class VideoplayerActivity extends CastEnabledActivity implements SeekBar.
     @Override
     protected void onResume() {
         super.onResume();
-        StorageUtils.checkStorageAvailability(this);
+        switchToAudioOnly = false;
         if (PlaybackService.isCasting()) {
             Intent intent = PlaybackService.getPlayerActivityIntent(this);
             if (!intent.getComponent().getClassName().equals(VideoplayerActivity.class.getName())) {
@@ -149,8 +149,7 @@ public class VideoplayerActivity extends CastEnabledActivity implements SeekBar.
 
     @Override
     public void onUserLeaveHint() {
-        if (!PictureInPictureUtil.isInPictureInPictureMode(this) && UserPreferences.getVideoBackgroundBehavior()
-                == UserPreferences.VideoBackgroundBehavior.PICTURE_IN_PICTURE) {
+        if (!PictureInPictureUtil.isInPictureInPictureMode(this)) {
             compatEnterPictureInPicture();
         }
     }
@@ -480,9 +479,7 @@ public class VideoplayerActivity extends CastEnabledActivity implements SeekBar.
         public void surfaceDestroyed(SurfaceHolder holder) {
             Log.d(TAG, "Videosurface was destroyed");
             videoSurfaceCreated = false;
-            if (controller != null && !destroyingDueToReload
-                    && UserPreferences.getVideoBackgroundBehavior()
-                    != UserPreferences.VideoBackgroundBehavior.CONTINUE_PLAYING) {
+            if (controller != null && !destroyingDueToReload && !switchToAudioOnly) {
                 controller.notifyVideoSurfaceAbandoned();
             }
         }
@@ -590,17 +587,17 @@ public class VideoplayerActivity extends CastEnabledActivity implements SeekBar.
         menu.findItem(R.id.set_sleeptimer_item).setVisible(!controller.sleepTimerActive());
         menu.findItem(R.id.disable_sleeptimer_item).setVisible(controller.sleepTimerActive());
 
-        if (PictureInPictureUtil.supportsPictureInPicture(this)) {
-            menu.findItem(R.id.player_go_to_picture_in_picture).setVisible(true);
-        }
+        menu.findItem(R.id.player_switch_to_audio_only).setVisible(true);
         menu.findItem(R.id.audio_controls).setIcon(R.drawable.ic_sliders);
+        menu.findItem(R.id.playback_speed).setVisible(true);
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.player_go_to_picture_in_picture) {
-            compatEnterPictureInPicture();
+        if (item.getItemId() == R.id.player_switch_to_audio_only) {
+            switchToAudioOnly = true;
+            finish();
             return true;
         }
         if (item.getItemId() == android.R.id.home) {
@@ -642,6 +639,8 @@ public class VideoplayerActivity extends CastEnabledActivity implements SeekBar.
         } else if (item.getItemId() == R.id.share_item && feedItem != null) {
             ShareDialog shareDialog = ShareDialog.newInstance(feedItem);
             shareDialog.show(getSupportFragmentManager(), "ShareEpisodeDialog");
+        } else if (item.getItemId() == R.id.playback_speed) {
+            new VariableSpeedDialog().show(getSupportFragmentManager(), null);
         } else {
             return false;
         }

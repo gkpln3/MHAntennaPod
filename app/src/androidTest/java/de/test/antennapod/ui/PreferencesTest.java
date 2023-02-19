@@ -10,6 +10,7 @@ import androidx.test.espresso.matcher.RootMatchers;
 import androidx.test.filters.LargeTest;
 import androidx.test.rule.ActivityTestRule;
 
+import de.danoeh.antennapod.core.storage.EpisodeCleanupAlgorithmFactory;
 import org.awaitility.Awaitility;
 import org.junit.Before;
 import org.junit.Rule;
@@ -27,7 +28,7 @@ import de.danoeh.antennapod.core.storage.APNullCleanupAlgorithm;
 import de.danoeh.antennapod.core.storage.APQueueCleanupAlgorithm;
 import de.danoeh.antennapod.core.storage.EpisodeCleanupAlgorithm;
 import de.danoeh.antennapod.core.storage.ExceptFavoriteCleanupAlgorithm;
-import de.danoeh.antennapod.fragment.EpisodesFragment;
+import de.danoeh.antennapod.fragment.AllEpisodesFragment;
 import de.danoeh.antennapod.fragment.QueueFragment;
 import de.danoeh.antennapod.fragment.SubscriptionFragment;
 import de.test.antennapod.EspressoTestUtils;
@@ -397,7 +398,7 @@ public class PreferencesTest {
         onView(withId(R.id.select_dialog_listview)).perform(swipeDown());
         onView(withText(R.string.episode_cleanup_except_favorite_removal)).perform(click());
         Awaitility.await().atMost(1000, MILLISECONDS)
-                .until(() -> UserPreferences.getEpisodeCleanupAlgorithm() instanceof ExceptFavoriteCleanupAlgorithm);
+                .until(() -> EpisodeCleanupAlgorithmFactory.build() instanceof ExceptFavoriteCleanupAlgorithm);
     }
 
     @Test
@@ -408,7 +409,7 @@ public class PreferencesTest {
         onView(withId(R.id.select_dialog_listview)).perform(swipeDown());
         onView(withText(R.string.episode_cleanup_queue_removal)).perform(click());
         Awaitility.await().atMost(1000, MILLISECONDS)
-                .until(() -> UserPreferences.getEpisodeCleanupAlgorithm() instanceof APQueueCleanupAlgorithm);
+                .until(() -> EpisodeCleanupAlgorithmFactory.build() instanceof APQueueCleanupAlgorithm);
     }
 
     @Test
@@ -419,7 +420,7 @@ public class PreferencesTest {
         onView(withId(R.id.select_dialog_listview)).perform(swipeUp());
         onView(withText(R.string.episode_cleanup_never)).perform(click());
         Awaitility.await().atMost(1000, MILLISECONDS)
-                .until(() -> UserPreferences.getEpisodeCleanupAlgorithm() instanceof APNullCleanupAlgorithm);
+                .until(() -> EpisodeCleanupAlgorithmFactory.build() instanceof APNullCleanupAlgorithm);
     }
 
     @Test
@@ -431,7 +432,7 @@ public class PreferencesTest {
         onView(withText(R.string.episode_cleanup_after_listening)).perform(click());
         Awaitility.await().atMost(1000, MILLISECONDS)
                 .until(() -> {
-                    EpisodeCleanupAlgorithm alg = UserPreferences.getEpisodeCleanupAlgorithm();
+                    EpisodeCleanupAlgorithm alg = EpisodeCleanupAlgorithmFactory.build();
                     if (alg instanceof APCleanupAlgorithm) {
                         APCleanupAlgorithm cleanupAlg = (APCleanupAlgorithm) alg;
                         return cleanupAlg.getNumberOfHoursAfterPlayback() == 0;
@@ -450,7 +451,7 @@ public class PreferencesTest {
         onView(withText(search)).perform(click());
         Awaitility.await().atMost(1000, MILLISECONDS)
                 .until(() -> {
-                    EpisodeCleanupAlgorithm alg = UserPreferences.getEpisodeCleanupAlgorithm();
+                    EpisodeCleanupAlgorithm alg = EpisodeCleanupAlgorithmFactory.build();
                     if (alg instanceof APCleanupAlgorithm) {
                         APCleanupAlgorithm cleanupAlg = (APCleanupAlgorithm) alg;
                         return cleanupAlg.getNumberOfHoursAfterPlayback() == 72; // 5 days
@@ -520,7 +521,7 @@ public class PreferencesTest {
         Awaitility.await().atMost(1000, MILLISECONDS)
                 .until(() -> UserPreferences.getBackButtonBehavior() == UserPreferences.BackButtonBehavior.GO_TO_PAGE);
         Awaitility.await().atMost(1000, MILLISECONDS)
-                .until(() -> UserPreferences.getBackButtonGoToPage().equals(EpisodesFragment.TAG));
+                .until(() -> UserPreferences.getBackButtonGoToPage().equals(AllEpisodesFragment.TAG));
         clickPreference(R.string.pref_back_button_behavior_title);
         onView(withText(R.string.back_button_go_to_page)).perform(click());
         onView(withText(R.string.subscriptions_label)).perform(click());

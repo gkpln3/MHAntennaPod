@@ -47,7 +47,8 @@
     <Preference
             android:key="statistics"
             android:title="@string/statistics_label"
-            android:icon="@drawable/ic_statistics" />
+            android:summary="@string/statistics_moved"
+            android:icon="@drawable/ic_chart_box"/>
 
     <PreferenceCategory
             android:key="project"

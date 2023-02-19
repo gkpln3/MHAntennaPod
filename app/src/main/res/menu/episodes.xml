@@ -21,23 +21,13 @@
         android:icon="@drawable/ic_filter"
         android:menuCategory="container"
         android:title="@string/filter"
-        android:visible="false"
-        custom:showAsAction="ifRoom"/>
+        custom:showAsAction="always"/>
 
     <item
-        android:id="@+id/mark_all_read_item"
-        android:title="@string/mark_all_read_label"
+        android:id="@+id/action_favorites"
+        android:icon="@drawable/ic_star_border"
         android:menuCategory="container"
-        custom:showAsAction="collapseActionView"
-        android:visible="false"
-        android:icon="@drawable/ic_check"/>
-
-    <item
-        android:id="@+id/remove_all_new_flags_item"
-        android:title="@string/remove_all_new_flags_label"
-        android:menuCategory="container"
-        custom:showAsAction="collapseActionView"
-        android:visible="false"
-        android:icon="@drawable/ic_check"/>
+        android:title="@string/favorite_episodes_label"
+        custom:showAsAction="always"/>
 
 </menu>

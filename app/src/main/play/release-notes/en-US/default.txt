@@ -1,7 +1,6 @@
-- Synchronization with Nextcloud ("GPodder Sync" app) (@thrillfall)
-- 'Duration' filter in podcast-specific auto-download settings (@thomasdomingos)
-- 'Downloaded episodes' screen in Android Auto (@ByteHamster)
-- Tags (previously folders): add to multiple podcasts via multi-select, rename tags (@vbh)
-- Accessibility: more TalkBack (@johnjohndoe @TacoTheDank)
-- Improvements for local feeds, mobile connections, physical keyboard/mouse support
-- Many minor & bigger bug fixes and other improvements
+∙ View "New Episodes" list now in a dedicated screen called Inbox, with swipe actions (@ByteHamster)
+∙ Use swipe actions and quickly toggle Favourites on the Episodes screen (@ByteHamster)
+∙ View a list of (unplayed) episodes in Android Auto (@tonytamsf)
+∙ Scroll to the top of lists by long-pressing the toolbar (@ByteHamster)
+∙ Bug fixes around authentication for podcasts & Nextcloud sync (@ByteHamster)
+∙ Directly open localised documentation if available (for now: da, fr, it, nl) (@ByteHamster)

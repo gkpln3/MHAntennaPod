@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.view.ContextMenu;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
@@ -85,8 +86,6 @@ public class QueueFragment extends Fragment implements Toolbar.OnMenuItemClickLi
     private boolean displayUpArrow;
 
     private List<FeedItem> queue;
-
-    private boolean isUpdatingFeeds = false;
 
     private static final String PREFS = "QueueFragment";
     private static final String PREF_SHOW_LOCK_WARNING = "show_lock_warning";
@@ -190,9 +189,7 @@ public class QueueFragment extends Fragment implements Toolbar.OnMenuItemClickLi
     public void onEventMainThread(DownloadEvent event) {
         Log.d(TAG, "onEventMainThread() called with DownloadEvent");
         DownloaderUpdate update = event.update;
-        if (event.hasChangedFeedUpdateStatus(isUpdatingFeeds)) {
-            refreshToolbarState();
-        }
+        refreshToolbarState();
         if (recyclerAdapter != null && update.mediaIds.length > 0) {
             for (long mediaId : update.mediaIds) {
                 int pos = FeedItemUtil.indexOfItemWithMediaId(queue, mediaId);
@@ -220,18 +217,14 @@ public class QueueFragment extends Fragment implements Toolbar.OnMenuItemClickLi
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onPlayerStatusChanged(PlayerStatusEvent event) {
         loadItems(false);
-        if (isUpdatingFeeds != updateRefreshMenuItemChecker.isRefreshing()) {
-            refreshToolbarState();
-        }
+        refreshToolbarState();
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onUnreadItemsChanged(UnreadItemsUpdateEvent event) {
         // Sent when playback position is reset
         loadItems(false);
-        if (isUpdatingFeeds != updateRefreshMenuItemChecker.isRefreshing()) {
-            refreshToolbarState();
-        }
+        refreshToolbarState();
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -260,17 +253,14 @@ public class QueueFragment extends Fragment implements Toolbar.OnMenuItemClickLi
         recyclerAdapter = null;
     }
 
-    private final MenuItemUtils.UpdateRefreshMenuItemChecker updateRefreshMenuItemChecker =
-            () -> DownloadService.isRunning && DownloadService.isDownloadingFeeds();
-
     private void refreshToolbarState() {
         boolean keepSorted = UserPreferences.isQueueKeepSorted();
         toolbar.getMenu().findItem(R.id.queue_lock).setChecked(UserPreferences.isQueueLocked());
         toolbar.getMenu().findItem(R.id.queue_lock).setVisible(!keepSorted);
         toolbar.getMenu().findItem(R.id.queue_sort_random).setVisible(!keepSorted);
         toolbar.getMenu().findItem(R.id.queue_keep_sorted).setChecked(keepSorted);
-        isUpdatingFeeds = MenuItemUtils.updateRefreshMenuItem(toolbar.getMenu(),
-                R.id.refresh_item, updateRefreshMenuItemChecker);
+        MenuItemUtils.updateRefreshMenuItem(toolbar.getMenu(),
+                R.id.refresh_item, DownloadService.isRunning && DownloadService.isDownloadingFeeds());
     }
 
     @Override
@@ -444,6 +434,11 @@ public class QueueFragment extends Fragment implements Toolbar.OnMenuItemClickLi
         View root = inflater.inflate(R.layout.queue_fragment, container, false);
         toolbar = root.findViewById(R.id.toolbar);
         toolbar.setOnMenuItemClickListener(this);
+        toolbar.setOnLongClickListener(v -> {
+            recyclerView.scrollToPosition(5);
+            recyclerView.post(() -> recyclerView.smoothScrollToPosition(0));
+            return false;
+        });
         displayUpArrow = getParentFragmentManager().getBackStackEntryCount() != 0;
         if (savedInstanceState != null) {
             displayUpArrow = savedInstanceState.getBoolean(KEY_UP_ARROW);
@@ -475,7 +470,7 @@ public class QueueFragment extends Fragment implements Toolbar.OnMenuItemClickLi
 
         emptyView = new EmptyViewHandler(getContext());
         emptyView.attachToRecyclerView(recyclerView);
-        emptyView.setIcon(R.drawable.ic_playlist);
+        emptyView.setIcon(R.drawable.ic_playlist_play);
         emptyView.setTitle(R.string.no_items_header_label);
         emptyView.setMessage(R.string.no_items_label);
 
@@ -504,8 +499,8 @@ public class QueueFragment extends Fragment implements Toolbar.OnMenuItemClickLi
             }
         });
         speedDialView.setOnActionSelectedListener(actionItem -> {
-            new EpisodeMultiSelectActionHandler(((MainActivity) getActivity()), recyclerAdapter.getSelectedItems())
-                    .handleAction(actionItem.getId());
+            new EpisodeMultiSelectActionHandler(((MainActivity) getActivity()), actionItem.getId())
+                    .handleAction(recyclerAdapter.getSelectedItems());
             recyclerAdapter.endSelectMode();
             return true;
         });
@@ -522,7 +517,13 @@ public class QueueFragment extends Fragment implements Toolbar.OnMenuItemClickLi
         if (queue != null) {
             if (recyclerAdapter == null) {
                 MainActivity activity = (MainActivity) getActivity();
-                recyclerAdapter = new QueueRecyclerAdapter(activity, swipeActions);
+                recyclerAdapter = new QueueRecyclerAdapter(activity, swipeActions) {
+                    @Override
+                    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+                        super.onCreateContextMenu(menu, v, menuInfo);
+                        MenuItemUtils.setOnClickListeners(menu, QueueFragment.this::onContextItemSelected);
+                    }
+                };
                 recyclerAdapter.setOnSelectModeListener(this);
                 recyclerView.setAdapter(recyclerAdapter);
                 emptyView.updateAdapter(recyclerAdapter);

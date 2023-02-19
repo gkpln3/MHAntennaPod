@@ -17,6 +17,8 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import de.danoeh.antennapod.net.discovery.ItunesTopListLoader;
+import de.danoeh.antennapod.net.discovery.PodcastSearchResult;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
@@ -116,19 +118,40 @@ public class QuickFeedDiscoveryFragment extends Fragment implements AdapterView.
         errorRetry.setVisibility(View.INVISIBLE);
 
         MHDiscoverListLoader loader = new MHDiscoverListLoader();
-        disposable = loader.loadToplist(true)
-                .subscribe(podcasts -> {
-                    errorTextView.setVisibility(View.GONE);
-                    progressBar.setVisibility(View.GONE);
-                    discoverGridLayout.setVisibility(View.VISIBLE);
-                    adapter.updateData(podcasts);
-                }, error -> {
-                    Log.e(TAG, Log.getStackTraceString(error));
-                    errorTextView.setText(error.getLocalizedMessage());
-                    errorTextView.setVisibility(View.VISIBLE);
-                    progressBar.setVisibility(View.GONE);
-                    discoverGridLayout.setVisibility(View.INVISIBLE);
-                });
+        SharedPreferences prefs = getActivity().getSharedPreferences(ItunesTopListLoader.PREFS, MODE_PRIVATE);
+        String countryCode = prefs.getString(ItunesTopListLoader.PREF_KEY_COUNTRY_CODE,
+                Locale.getDefault().getCountry());
+        if (countryCode.equals(ItunesTopListLoader.DISCOVER_HIDE_FAKE_COUNTRY_CODE)) {
+            errorTextView.setText(R.string.discover_is_hidden);
+            errorView.setVisibility(View.VISIBLE);
+            progressBar.setVisibility(View.GONE);
+            discoverGridLayout.setVisibility(View.GONE);
+            errorRetry.setVisibility(View.GONE);
+            poweredByTextView.setVisibility(View.GONE);
+            return;
+        }
+
+        disposable = loader.loadToplist(countryCode, NUM_SUGGESTIONS)
+                .subscribe(
+                        podcasts -> {
+                            errorView.setVisibility(View.GONE);
+                            progressBar.setVisibility(View.GONE);
+                            discoverGridLayout.setVisibility(View.VISIBLE);
+                            if (podcasts.size() == 0) {
+                                errorTextView.setText(getResources().getText(R.string.search_status_no_results));
+                                errorView.setVisibility(View.VISIBLE);
+                                discoverGridLayout.setVisibility(View.INVISIBLE);
+                            } else {
+                                adapter.updateData(podcasts);
+                            }
+                        }, error -> {
+                            Log.e(TAG, Log.getStackTraceString(error));
+                            errorTextView.setText(error.getLocalizedMessage());
+                            errorView.setVisibility(View.VISIBLE);
+                            progressBar.setVisibility(View.GONE);
+                            discoverGridLayout.setVisibility(View.INVISIBLE);
+                            errorRetry.setVisibility(View.VISIBLE);
+                        });
     }
 
     @Override
