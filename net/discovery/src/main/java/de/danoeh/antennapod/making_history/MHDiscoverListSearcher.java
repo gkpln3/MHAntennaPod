@@ -5,11 +5,12 @@ import android.content.Context;
 import java.util.ArrayList;
 import java.util.List;
 
-import de.danoeh.antennapod.discovery.PodcastSearchResult;
-import de.danoeh.antennapod.discovery.PodcastSearcher;
+import de.danoeh.antennapod.net.discovery.PodcastSearchResult;
+import de.danoeh.antennapod.net.discovery.PodcastSearcher;
 import io.reactivex.Single;
 import io.reactivex.SingleOnSubscribe;
 import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
 
 public class MHDiscoverListSearcher implements PodcastSearcher {
@@ -23,7 +24,7 @@ public class MHDiscoverListSearcher implements PodcastSearcher {
     public Single<List<PodcastSearchResult>> search(String query) {
         return Single.create((SingleOnSubscribe<List<PodcastSearchResult>>) subscriber -> {
             if (s_cachedResultsFromDiscover == null) {
-                loader.loadToplist(false).subscribe((podcastSearchResults) ->
+                Disposable disposable = loader.loadToplist(false).subscribe((podcastSearchResults) ->
                 {
                     s_cachedResultsFromDiscover = podcastSearchResults;
                     subscriber.onSuccess(filterResults(s_cachedResultsFromDiscover, query));

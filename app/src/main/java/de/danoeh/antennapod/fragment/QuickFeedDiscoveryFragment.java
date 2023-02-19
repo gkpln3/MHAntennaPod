@@ -28,8 +28,6 @@ import de.danoeh.antennapod.activity.MainActivity;
 import de.danoeh.antennapod.activity.OnlineFeedViewActivity;
 import de.danoeh.antennapod.adapter.FeedDiscoverAdapter;
 import de.danoeh.antennapod.event.DiscoveryDefaultUpdateEvent;
-import de.danoeh.antennapod.discovery.ItunesTopListLoader;
-import de.danoeh.antennapod.discovery.PodcastSearchResult;
 import de.danoeh.antennapod.making_history.MHDiscoverListLoader;
 import de.danoeh.antennapod.making_history.MHDiscoverSearchFragment;
 import io.reactivex.disposables.Disposable;
@@ -131,7 +129,7 @@ public class QuickFeedDiscoveryFragment extends Fragment implements AdapterView.
             return;
         }
 
-        disposable = loader.loadToplist(countryCode, NUM_SUGGESTIONS)
+        disposable = loader.loadToplist(true)
                 .subscribe(
                         podcasts -> {
                             errorView.setVisibility(View.GONE);

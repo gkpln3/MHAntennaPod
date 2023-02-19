@@ -569,7 +569,7 @@ public class PlaybackService extends MediaBrowserServiceCompat {
                         .subscribe(
                                 loadedPlayable -> {
                                     mMakingHistoryAnalytics.reportStartOfPlayback(loadedPlayable);
-                                    startPlaying(loadedPlayable, allowStreamThisTime)
+                                    startPlaying(loadedPlayable, allowStreamThisTime);
                                 },
                                 error -> {
                                     Log.d(TAG, "Playable was not found. Stopping service.");

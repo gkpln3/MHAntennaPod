@@ -3,7 +3,6 @@ package de.danoeh.antennapod.net.discovery;
 import android.text.TextUtils;
 import android.util.Log;
 
-import de.danoeh.antennapod.making_history.MHDiscoverListSearcher;
 import io.reactivex.Single;
 import io.reactivex.SingleOnSubscribe;
 import io.reactivex.android.schedulers.AndroidSchedulers;

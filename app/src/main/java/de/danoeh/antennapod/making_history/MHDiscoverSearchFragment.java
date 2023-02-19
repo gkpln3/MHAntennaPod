@@ -15,18 +15,12 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Adapter;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.GridView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import de.danoeh.antennapod.discovery.ItunesPodcastSearcher;
-import de.danoeh.antennapod.discovery.ItunesTopListLoader;
-import de.danoeh.antennapod.discovery.PodcastSearchResult;
-
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -35,16 +29,14 @@ import java.util.List;
 import de.danoeh.antennapod.R;
 import de.danoeh.antennapod.activity.OnlineFeedViewActivity;
 import de.danoeh.antennapod.adapter.itunes.ItunesAdapter;
-import de.danoeh.antennapod.making_history.MHDiscoverListLoader;
-import de.danoeh.antennapod.making_history.MHDiscoverListSearcher;
-import dev.dworks.libs.astickyheader.SectionedGridAdapter;
+import de.danoeh.antennapod.net.discovery.PodcastSearchResult;
 import dev.dworks.libs.astickyheader.SimpleSectionedGridAdapter;
 import io.reactivex.disposables.Disposable;
 
 //Searches iTunes store for given string and displays results in a list
 public class MHDiscoverSearchFragment extends Fragment {
 
-    private static final String TAG = "MHDiscoverSearchFragment";
+    private static final String TAG = "MHDiscoverSearchFrag";
 
 
     /**
@@ -241,7 +233,7 @@ public class MHDiscoverSearchFragment extends Fragment {
         MHDiscoverListSearcher searcher = new MHDiscoverListSearcher();
         disposable = searcher.search(query).subscribe(podcasts -> {
             progressBar.setVisibility(View.GONE);
-            updateData(podcasts);
+//            updateData(podcasts);
         }, error -> {
             Log.e(TAG, Log.getStackTraceString(error));
             progressBar.setVisibility(View.GONE);

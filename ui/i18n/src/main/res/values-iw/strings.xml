@@ -287,7 +287,7 @@
   <string name="download_type_feed">הזנה</string>
   <string name="download_type_media">קובץ מדיה</string>
   <string name="null_value_podcast_error">לא סופקו פרקים שניתן להציג.</string>
-  <string name="no_feed_url_podcast_found_by_search">לפודקאסט המוצע לא היה קישור RSS,‏ AntennaPod מצאה פודקאסט שכנראה יתאים</string>
+  <string name="no_feed_url_podcast_found_by_search">לפודקאסט המוצע לא היה קישור RSS,‏ עושים היסטוריה מצאה פודקאסט שכנראה יתאים</string>
   <string name="authentication_notification_title">נדרש אימות</string>
   <string name="authentication_notification_msg">המשאב שביקשת דורש שם משתמש וססמה</string>
   <string name="confirm_mobile_download_dialog_title">אישור הורדה דרך רשת סלולרית</string>
@@ -457,7 +457,7 @@
   <string name="synchronization_login_status"><![CDATA[נכנסת בתור <i>%1$s</i> אל <i>%2$s</i>. <br/><br/>אפשר לבחור את שרת הסנכרון שלך שוב לאחר היציאה מהחשבון]]></string>
   <string name="synchronization_summary_unchoosen">אפשר לבחור בין מגוון ספקית לסנכרון המינויים ומצב נגינ הפרקים שלך עם</string>
   <string name="synchronization_summary_nextcloud">Gpoddersync הוא יישומון Nextcloud בקוד פתוח שניתן להתקין בקלות בשרת שלך. היישומון אינו תלוי במיזם AntennaPod.</string>
-  <string name="synchronization_nextcloud_authenticate_browser">יש להעניק גישה באמצעות הדפדפן שנפתח ולחזור ל־AntennaPod.</string>
+  <string name="synchronization_nextcloud_authenticate_browser">יש להעניק גישה באמצעות הדפדפן שנפתח ולחזור לעושים היסטוריה.</string>
   <string name="synchronization_choose_title">בחירת ספק סנכרון</string>
   <string name="synchronization_force_sync_summary">סנכרון המינוי ושינויי מצב הפרקים מחדש</string>
   <string name="synchronization_sync_summary">סנכרון המינוי ושינויי מצב הפרקים</string>

@@ -1,10 +1,8 @@
 package de.danoeh.antennapod.making_history;
 
-import android.content.Context;
-import de.danoeh.antennapod.R;
 import de.danoeh.antennapod.core.ClientConfig;
 import de.danoeh.antennapod.core.service.download.AntennapodHttpClient;
-import de.danoeh.antennapod.discovery.PodcastSearchResult;
+import de.danoeh.antennapod.net.discovery.PodcastSearchResult;
 import io.reactivex.Single;
 import io.reactivex.SingleOnSubscribe;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -19,7 +17,6 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 public class MHDiscoverListLoader {
     private final String TOP_DISCOVER_JSON_URL = "https://firebasestorage.googleapis.com/v0/b/makinghistory-1579519443087.appspot.com/o/mh_discover_feed.json?alt=media";
