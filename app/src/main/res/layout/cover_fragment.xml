@@ -7,14 +7,14 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:gravity="center"
-    android:orientation="horizontal"
+    android:orientation="vertical"
     android:padding="8dp">
 
-    <Space
-        android:id="@+id/counterweight"
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/coverHolder"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_weight="1" />
+        android:layout_height="0dp"
+        android:layout_weight="1">
 
     <FrameLayout
         android:id="@+id/adsWebViewHolder"
@@ -79,29 +79,18 @@
             android:textColor="?android:attr/textColorPrimary"
             android:textIsSelectable="false"
             android:textSize="@dimen/text_size_small"
+            android:layout_marginBottom="32dp"
             tools:text="Episode" />
 
-        <Space
-            android:id="@+id/vertical_divider"
-            android:layout_width="match_parent"
-            android:layout_height="8dp"
-            android:visibility="gone" />
-
     </LinearLayout>
-
-    <Space
-        android:id="@+id/details_spacer"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_weight="1" />
 
     <LinearLayout
         android:id="@+id/episode_details"
         android:layout_width="wrap_content"
         android:layout_height="36dp"
-        android:layout_weight="0"
         android:baselineAligned="false"
         android:orientation="horizontal"
+        android:layout_gravity="center_horizontal"
         android:paddingLeft="8dp"
         android:paddingRight="8dp">
 
@@ -153,7 +142,8 @@
             android:gravity="center"
             android:minWidth="150dp"
             android:orientation="horizontal"
-            android:visibility="gone">
+            android:visibility="gone"
+            tools:visibility="visible">
 
             <ImageButton
                 android:id="@+id/butPrevChapter"
