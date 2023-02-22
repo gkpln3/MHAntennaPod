@@ -1,5 +1,8 @@
 package de.danoeh.antennapod.fragment;
 
+import static android.widget.LinearLayout.LayoutParams.MATCH_PARENT;
+import static android.widget.LinearLayout.LayoutParams.WRAP_CONTENT;
+
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
@@ -10,16 +13,7 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.ColorFilter;
 import android.graphics.drawable.Drawable;
-import android.animation.Animator;
-import android.content.ActivityNotFoundException;
-import android.content.Intent;
 import android.net.Uri;
-import android.os.Bundle;
-import android.text.TextUtils;
-
-import androidx.activity.OnBackPressedCallback;
-import androidx.annotation.NonNull;
-import androidx.fragment.app.Fragment;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
@@ -30,15 +24,17 @@ import android.view.ViewGroup;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
-import android.widget.ImageButton;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
+
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.BlendModeColorFilterCompat;
 import androidx.core.graphics.BlendModeCompat;
 import androidx.fragment.app.Fragment;
+
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.RequestBuilder;
 import com.bumptech.glide.load.resource.bitmap.FitCenter;
@@ -56,15 +52,9 @@ import java.util.regex.Matcher;
 
 import de.danoeh.antennapod.R;
 import de.danoeh.antennapod.activity.MainActivity;
-import de.danoeh.antennapod.core.storage.DBReader;
-import de.danoeh.antennapod.event.playback.PlaybackPositionEvent;
-import de.danoeh.antennapod.model.feed.FeedMedia;
 import de.danoeh.antennapod.core.feed.util.ImageResourceUtils;
-import de.danoeh.antennapod.core.glide.ApGlideSettings;
 import de.danoeh.antennapod.core.making_history.MHAnalytics;
-import de.danoeh.antennapod.R;
-import de.danoeh.antennapod.activity.MainActivity;
-import de.danoeh.antennapod.core.feed.util.ImageResourceUtils;
+import de.danoeh.antennapod.core.storage.DBReader;
 import de.danoeh.antennapod.core.util.ChapterUtils;
 import de.danoeh.antennapod.core.util.DateFormatter;
 import de.danoeh.antennapod.core.util.playback.PlaybackController;
@@ -78,21 +68,12 @@ import io.reactivex.Maybe;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
-import org.apache.commons.lang3.StringUtils;
-import org.greenrobot.eventbus.EventBus;
-import org.greenrobot.eventbus.Subscribe;
-import org.greenrobot.eventbus.ThreadMode;
-
-import static android.widget.LinearLayout.LayoutParams.MATCH_PARENT;
-import static android.widget.LinearLayout.LayoutParams.WRAP_CONTENT;
 
 /**
  * Displays the cover and the title of a FeedItem.
  */
 public class CoverFragment extends Fragment {
     private static final String TAG = "CoverFragment";
-    private WebView adsWebView;
-    private FrameLayout adsWebViewHolder;
     private CoverFragmentBinding viewBinding;
     private PlaybackController controller;
     private Disposable disposable;
@@ -103,6 +84,8 @@ public class CoverFragment extends Fragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        mMHAnalytics = new MHAnalytics(this.getContext());
+
         viewBinding = CoverFragmentBinding.inflate(inflater);
         viewBinding.imgvCover.setOnClickListener(v -> onPlayPause());
         viewBinding.openDescription.setOnClickListener(view -> ((AudioPlayerFragment) requireParentFragment())
@@ -176,23 +159,29 @@ public class CoverFragment extends Fragment {
             if (advUrl == null || !isMHAdsURL(advUrl)) {
                 advUrl = null;
 
-                adsWebView.animate().setDuration(100).alpha(0f);
+                viewBinding.adsWebView.animate().setDuration(100).alpha(0f).withEndAction(new Runnable() {
+                    @Override
+                    public void run() {
+                        viewBinding.adsWebView.setVisibility(View.GONE);
+                    }
+                });
                 return;
             }
-
-            adsWebView.setWebViewClient(new WebViewClient() {
+            viewBinding.adsWebView.getSettings().setLoadWithOverviewMode(true);
+            viewBinding.adsWebView.getSettings().setUseWideViewPort(true);
+            viewBinding.adsWebView.setWebViewClient(new WebViewClient() {
                 @Override
                 public void onPageFinished(WebView view, String url) {
                     super.onPageFinished(view, url);
 
-                    adsWebView.animate().alpha(1f);
-                    adsWebView.setVisibility(View.VISIBLE);
+                    viewBinding.adsWebView.setVisibility(View.VISIBLE);
+                    viewBinding.adsWebView.animate().alpha(1f);
 
                     if (getActivity() != null) {
                         getActivity().getOnBackPressedDispatcher().addCallback(new OnBackPressedCallback(true) {
                             @Override
                             public void handleOnBackPressed() {
-                                adsWebView.animate().setDuration(100).alpha(0f).withEndAction(() ->
+                                viewBinding.adsWebView.animate().setDuration(100).alpha(0f).withEndAction(() ->
                                 {
                                     this.setEnabled(false);
                                     if (getActivity() != null)
@@ -216,7 +205,7 @@ public class CoverFragment extends Fragment {
                 }
             });
 
-            adsWebView.loadUrl(advUrl);
+            viewBinding.adsWebView.loadUrl(advUrl);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -412,18 +401,18 @@ public class CoverFragment extends Fragment {
     private void configureForOrientation(Configuration newConfig) {
         boolean isPortrait = newConfig.orientation == Configuration.ORIENTATION_PORTRAIT;
 
-        LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) adsWebViewHolder.getLayoutParams();
+        ConstraintLayout.LayoutParams params = (ConstraintLayout.LayoutParams) viewBinding.adsWebViewHolder.getLayoutParams();
         viewBinding.coverFragment.setOrientation(isPortrait ? LinearLayout.VERTICAL : LinearLayout.HORIZONTAL);
 
         if (isPortrait) {
             viewBinding.coverHolder.setLayoutParams(new LinearLayout.LayoutParams(MATCH_PARENT, 0, 1));
             viewBinding.coverFragmentTextContainer.setLayoutParams(
                     new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
-            adsWebViewHolder.setLayoutParams(params);
+            viewBinding.adsWebViewHolder.setLayoutParams(params);
         } else {
             viewBinding.coverHolder.setLayoutParams(new LinearLayout.LayoutParams(0, MATCH_PARENT, 1));
             viewBinding.coverFragmentTextContainer.setLayoutParams(new LinearLayout.LayoutParams(0, MATCH_PARENT, 1));
-            adsWebViewHolder.setLayoutParams(params);
+            viewBinding.adsWebViewHolder.setLayoutParams(params);
         }
 
         ((ViewGroup) viewBinding.episodeDetails.getParent()).removeView(viewBinding.episodeDetails);

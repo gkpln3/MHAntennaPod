@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:squareImageView="http://schemas.android.com/apk/de.danoeh.antennapod"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/cover_fragment"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center"
     android:orientation="vertical"
     android:padding="8dp">
 
@@ -19,20 +19,24 @@
     <FrameLayout
         android:id="@+id/adsWebViewHolder"
         android:layout_width="0dp"
-        android:layout_height="200dp"
-        android:layout_weight="0"
+        android:layout_height="0dp"
         android:layout_gravity="center"
-        android:layout_marginHorizontal="16dp"
+        android:layout_marginHorizontal="32dp"
+        app:layout_constraintDimensionRatio="1:1"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
         android:alpha="1">
 
-        <de.danoeh.antennapod.ui.common.SquareImageView
+        <ImageView
             android:id="@+id/imgvCover"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:foreground="?attr/selectableItemBackgroundBorderless"
             android:importantForAccessibility="no"
             android:scaleType="fitCenter"
-            squareImageView:direction="height"
+            squareImageView:direction="minimum"
             tools:src="@android:drawable/sym_def_app_icon" />
 
         <WebView
@@ -43,6 +47,7 @@
             android:alpha="0" />
 
     </FrameLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <LinearLayout
         android:id="@+id/cover_fragment_text_container"
@@ -99,12 +104,12 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="8dp"
-            android:layout_weight="1"
             android:background="@drawable/grey_border"
             android:clickable="true"
             android:focusable="true"
             android:gravity="center"
             android:minWidth="150dp"
+            android:layout_weight="1"
             android:orientation="horizontal">
 
             <ImageView
@@ -119,9 +124,9 @@
                 android:id="@+id/shownotes_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="2dp"
-                android:layout_marginLeft="2dp"
                 android:ellipsize="none"
+                android:layout_marginLeft="2dp"
+                android:layout_marginStart="2dp"
                 android:gravity="center_horizontal"
                 android:maxLines="2"
                 android:text="@string/shownotes_label"

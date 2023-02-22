@@ -36,6 +36,7 @@ import de.danoeh.antennapod.core.service.download.DownloadRequestCreator;
 import de.danoeh.antennapod.core.service.download.DownloadService;
 import de.danoeh.antennapod.core.util.download.AutoUpdateManager;
 import de.danoeh.antennapod.model.feed.Feed;
+import de.danoeh.antennapod.net.download.serviceinterface.DownloadServiceInterface;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.OkHttpClient;
@@ -92,7 +93,7 @@ public class MHDefaultFeedLoader {
                             for (OpmlElement element : elements) {
                                 Feed feed = new Feed(element.getXmlUrl(), null, element.getText());
                                 if (!unwantedPodcasts.contains(element.getXmlUrl())) {
-                                    DownloadService.download(activity, false, DownloadRequestCreator.create(feed).build());
+                                    DownloadServiceInterface.get().download(activity, false, DownloadRequestCreator.create(feed).build());
                                     // Once we've added this podcast, theres no need to add it again ever...
                                     MHDefaultFeedLoader.addUnwantedFeedToList(activity, element.getXmlUrl());
                                 }

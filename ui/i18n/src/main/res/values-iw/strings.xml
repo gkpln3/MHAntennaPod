@@ -49,7 +49,7 @@
   <string name="home_continue_title">המשך האזנה</string>
   <string name="home_new_title">מה חדש</string>
   <string name="home_downloads_title">ניהול הורדות</string>
-  <string name="home_welcome_title">ברוך בואך לאנטנה־פּוֹד!</string>
+  <string name="home_welcome_title">ברוך בואך לעושים היסטוריה!</string>
   <string name="home_welcome_text">לא נרשמת עדיין לאף פודקאסט. יש לפתוח את תפריט הצד ולהוסיף פודקאסט.</string>
   <string name="configure_home">הגדרת מסך הבית</string>
   <!--Download Statistics fragment-->
@@ -630,7 +630,7 @@
   <string name="synchronization_choose_title">בחירת ספק סנכרון</string>
   <string name="synchronization_summary_unchoosen">אפשר לבחור בין מגוון ספקית לסנכרון המינויים ומצב נגינ הפרקים שלך עם</string>
   <string name="dialog_choose_sync_service_title">בחירת ספק סנכרון</string>
-  <string name="gpodnet_description">Gpodder.net הוא שירות סנכרון פודקאסטים בקוד פתוח שניתן להתקין על שרת משלך. ל־Gpodder.net אין לו קשר למיזם אנטנה־פּוֹד.</string>
+  <string name="gpodnet_description">Gpodder.net הוא שירות סנכרון פודקאסטים בקוד פתוח שניתן להתקין על שרת משלך. ל־Gpodder.net אין לו קשר למיזם עושים היסטוריה או לאנטנהפוד.</string>
   <string name="synchronization_summary_nextcloud">Gpoddersync הוא יישומון Nextcloud בקוד פתוח שניתן להתקין בקלות בשרת שלך. היישומון אינו תלוי במיזם AntennaPod.</string>
   <string name="synchronization_host_explanation">אפשר לבחור שרת משלך להסתנכרן מולו. כשזיהית את שרת הסנכרון המועדף עליך, נא למלא את הכתובת שלו כאן.</string>
   <string name="synchronization_host_label">כתובת שרת</string>
