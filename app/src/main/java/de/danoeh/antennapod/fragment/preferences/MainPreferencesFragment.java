@@ -1,5 +1,6 @@
 package de.danoeh.antennapod.fragment.preferences;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
@@ -47,32 +48,47 @@ public class MainPreferencesFragment extends PreferenceFragmentCompat {
         addPreferencesFromResource(R.xml.preferences);
         setupMainScreen();
         setupSearch();
+//
+//        // If you are writing a spin-off, please update the details on screens like "About" and "Report bug"
+//        // and afterwards remove the following lines. Please keep in mind that AntennaPod is licensed under the GPL.
+//        // This means that your application needs to be open-source under the GPL, too.
+//        // It must also include a prominent copyright notice.
+//        int packageHash = getContext().getPackageName().hashCode();
+//        if (packageHash != 1790437538 && packageHash != -1190467065) {
+//            findPreference(PREF_CATEGORY_PROJECT).setVisible(false);
+//            Preference copyrightNotice = new Preference(getContext());
+//            copyrightNotice.setIcon(R.drawable.ic_info_white);
+//            copyrightNotice.getIcon().mutate()
+//                    .setColorFilter(new PorterDuffColorFilter(0xffcc0000, PorterDuff.Mode.MULTIPLY));
+//            copyrightNotice.setSummary("This application is based on AntennaPod."
+//                    + " The AntennaPod team does NOT provide support for this unofficial version."
+//                    + " If you can read this message, the developers of this modification"
+//                    + " violate the GNU General Public License (GPL).");
+//            findPreference(PREF_CATEGORY_PROJECT).getParent().addPreference(copyrightNotice);
+//        } else if (packageHash == -1190467065) {
+//            Preference debugNotice = new Preference(getContext());
+//            debugNotice.setIcon(R.drawable.ic_info_white);
+//            debugNotice.getIcon().mutate()
+//                    .setColorFilter(new PorterDuffColorFilter(0xffcc0000, PorterDuff.Mode.MULTIPLY));
+////            debugNotice.setOrder(-1);
+//            debugNotice.setSummary("This is a development version of AntennaPod and not meant for daily use");
+//            findPreference(PREF_CATEGORY_PROJECT).getParent().addPreference(debugNotice);
+//        }
 
-        // If you are writing a spin-off, please update the details on screens like "About" and "Report bug"
-        // and afterwards remove the following lines. Please keep in mind that AntennaPod is licensed under the GPL.
-        // This means that your application needs to be open-source under the GPL, too.
-        // It must also include a prominent copyright notice.
-        int packageHash = getContext().getPackageName().hashCode();
-        if (packageHash != 1790437538 && packageHash != -1190467065) {
-            findPreference(PREF_CATEGORY_PROJECT).setVisible(false);
-            Preference copyrightNotice = new Preference(getContext());
-            copyrightNotice.setIcon(R.drawable.ic_info_white);
-            copyrightNotice.getIcon().mutate()
-                    .setColorFilter(new PorterDuffColorFilter(0xffcc0000, PorterDuff.Mode.MULTIPLY));
-            copyrightNotice.setSummary("This application is based on AntennaPod."
-                    + " The AntennaPod team does NOT provide support for this unofficial version."
-                    + " If you can read this message, the developers of this modification"
-                    + " violate the GNU General Public License (GPL).");
-            findPreference(PREF_CATEGORY_PROJECT).getParent().addPreference(copyrightNotice);
-        } else if (packageHash == -1190467065) {
-            Preference debugNotice = new Preference(getContext());
-            debugNotice.setIcon(R.drawable.ic_info_white);
-            debugNotice.getIcon().mutate()
-                    .setColorFilter(new PorterDuffColorFilter(0xffcc0000, PorterDuff.Mode.MULTIPLY));
-            debugNotice.setOrder(-1);
-            debugNotice.setSummary("This is a development version of AntennaPod and not meant for daily use");
-            findPreference(PREF_CATEGORY_PROJECT).getParent().addPreference(debugNotice);
-        }
+        findPreference("copyrightNotice").setOnPreferenceClickListener(preference -> {
+            new MaterialAlertDialogBuilder(getContext())
+                    .setTitle("Notice")
+                .setMessage(R.string.copyright_notice)
+                .setNegativeButton(R.string.visit, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        IntentUtils.openInBrowser(getContext(), "https://www.antennapod.org/");
+                    }
+                }).setPositiveButton(R.string.close_label,null)
+                .show();
+
+            return true;
+        });
     }
 
     @Override
@@ -114,31 +130,31 @@ public class MainPreferencesFragment extends PreferenceFragmentCompat {
                     return true;
                 }
         );
-        findPreference(PREF_DOCUMENTATION).setOnPreferenceClickListener(preference -> {
-            IntentUtils.openInBrowser(getContext(), getLocalizedWebsiteLink() + "/documentation/");
-            return true;
-        });
-        findPreference(PREF_VIEW_FORUM).setOnPreferenceClickListener(preference -> {
-            IntentUtils.openInBrowser(getContext(), "https://forum.antennapod.org/");
-            return true;
-        });
-        findPreference(PREF_CONTRIBUTE).setOnPreferenceClickListener(preference -> {
-            IntentUtils.openInBrowser(getContext(), getLocalizedWebsiteLink() + "/contribute/");
-            return true;
-        });
+//        findPreference(PREF_DOCUMENTATION).setOnPreferenceClickListener(preference -> {
+//            IntentUtils.openInBrowser(getContext(), getLocalizedWebsiteLink() + "/documentation/");
+//            return true;
+//        });
+//        findPreference(PREF_VIEW_FORUM).setOnPreferenceClickListener(preference -> {
+//            IntentUtils.openInBrowser(getContext(), "https://forum.antennapod.org/");
+//            return true;
+//        });
+//        findPreference(PREF_CONTRIBUTE).setOnPreferenceClickListener(preference -> {
+//            IntentUtils.openInBrowser(getContext(), getLocalizedWebsiteLink() + "/contribute/");
+//            return true;
+//        });
         findPreference(PREF_SEND_BUG_REPORT).setOnPreferenceClickListener(preference -> {
-            startActivity(new Intent(getActivity(), BugReportActivity.class));
+            IntentUtils.openInBrowser(getContext(), "https://github.com/gkpln3/MHAntennaPod");
             return true;
         });
-        findPreference(PREF_STATISTICS).setOnPreferenceClickListener(
-                preference -> {
-                    new MaterialAlertDialogBuilder(getContext())
-                            .setMessage(R.string.statistics_moved)
-                            .setPositiveButton(android.R.string.ok, null)
-                            .show();
-                    return true;
-                }
-        );
+//        findPreference(PREF_STATISTICS).setOnPreferenceClickListener(
+//                preference -> {
+//                    new MaterialAlertDialogBuilder(getContext())
+//                            .setMessage(R.string.statistics_moved)
+//                            .setPositiveButton(android.R.string.ok, null)
+//                            .show();
+//                    return true;
+//                }
+//        );
     }
 
     private String getLocalizedWebsiteLink() {

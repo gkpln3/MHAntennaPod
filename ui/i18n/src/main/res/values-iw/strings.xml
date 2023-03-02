@@ -838,4 +838,7 @@
   <string name="shortcut_subscription_label">קיצור למינוי</string>
   <string name="shortcut_select_subscription">בחירת מינוי</string>
   <string name="add_shortcut">הוספת קיצור דרך</string>
+    <string name="visit">בקר באנטנהפוד</string>
+  <string name="copyright_notice">האפליקציה הזו מבוססת על אנטנהפוד.\nצוות אנטנהפוד איננו מספק תמיכה עבור גרסה לא רשמית זאת.</string>
+  <string name="app_is_based_on_antennapod">האפליקציה הזאת מבוססת על פרוייקט הקוד הפתוח של אנטנהפוד</string>
 </resources>
